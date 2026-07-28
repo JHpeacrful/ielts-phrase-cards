@@ -1,0 +1,11 @@
+# macOS
+.DS_Store
+
+# Source inspection images and temporary study material
+ocr-samples/
+contents/
+学习追踪器.html
+学习执行方案.md
+
+# Personal phrase-card backups
+ielts-phrase-cards-*.json

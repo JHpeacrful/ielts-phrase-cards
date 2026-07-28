@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IELTS 短语卡工具</title>
+<style>
+  :root { --ink:#17242d; --muted:#61707a; --paper:#f5f4ee; --panel:#fffefa; --line:#cbd1cf; --teal:#176b63; --teal-soft:#dcefe9; --blue:#315d8c; --amber:#896016; --red:#a23c33; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font-family:"Times New Roman", SimSun, serif; }
+  button, input, textarea, select { font:inherit; }
+  button { cursor:pointer; }
+  .shell { max-width:1120px; margin:0 auto; padding:28px 20px 48px; }
+  header { display:flex; justify-content:space-between; gap:22px; align-items:flex-start; padding-bottom:17px; border-bottom:2px solid var(--ink); }
+  h1, h2, h3, p { margin-top:0; }
+  h1 { margin-bottom:6px; font-size:29px; letter-spacing:0; }
+  h2 { font-size:22px; margin-bottom:14px; }
+  h3 { font-size:18px; margin-bottom:6px; }
+  .muted { color:var(--muted); line-height:1.5; }
+  .summary { min-width:270px; display:grid; grid-template-columns:repeat(3,1fr); border:1px solid var(--line); background:var(--panel); }
+  .stat { padding:10px 12px; border-left:1px solid var(--line); }
+  .stat:first-child { border-left:0; }
+  .stat strong { display:block; font-size:23px; }
+  .stat span { color:var(--muted); font-size:13px; }
+  .section { margin-top:22px; }
+  .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px 18px; }
+  .field { display:block; }
+  .field.full { grid-column:1 / -1; }
+  label, legend { font-weight:bold; }
+  input[type="text"], textarea, select, input[type="file"] { width:100%; margin-top:6px; padding:8px 9px; color:var(--ink); background:var(--panel); border:1px solid var(--line); border-radius:2px; }
+  textarea { resize:vertical; min-height:76px; }
+  fieldset { margin:0; padding:0; border:0; }
+  .choices { display:flex; flex-wrap:wrap; gap:8px; margin-top:7px; }
+  .choice { display:inline-flex; gap:5px; align-items:center; padding:6px 8px; background:var(--panel); border:1px solid var(--line); }
+  .choice input { margin:0; accent-color:var(--teal); }
+  .toolbar { display:flex; flex-wrap:wrap; align-items:end; gap:10px; margin-top:18px; }
+  .toolbar .field { flex:1 1 180px; }
+  .button { padding:8px 12px; color:var(--ink); background:transparent; border:1px solid var(--ink); border-radius:2px; }
+  .button.primary { color:#fff; background:var(--teal); border-color:var(--teal); }
+  .button.danger { color:var(--red); border-color:var(--red); }
+  .button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline:2px solid var(--blue); outline-offset:2px; }
+  .notice { min-height:24px; margin:14px 0 0; color:var(--teal); font-weight:bold; }
+  .notice.error { color:var(--red); }
+  .review { display:none; margin-top:22px; padding:18px; border:1px solid var(--ink); background:var(--panel); }
+  .review.visible { display:block; }
+  .review-top { display:flex; justify-content:space-between; gap:10px; align-items:center; }
+  .card-face { min-height:180px; margin:14px 0; padding:20px; border:1px solid var(--line); background:var(--paper); display:flex; flex-direction:column; justify-content:center; }
+  .card-face .side { color:var(--muted); font-size:14px; margin-bottom:8px; }
+  .card-face .phrase { font-size:26px; line-height:1.25; }
+  .card-face .detail { white-space:pre-line; line-height:1.55; }
+  .review-actions { display:flex; flex-wrap:wrap; gap:10px; }
+  .status-g { border-color:var(--teal); color:var(--teal); }
+  .status-y { border-color:var(--amber); color:var(--amber); }
+  .status-r { border-color:var(--red); color:var(--red); }
+  .list-head { display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin-top:28px; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(285px,1fr)); gap:12px; }
+  .card { padding:15px; border:1px solid var(--line); background:var(--panel); }
+  .card-title { display:flex; justify-content:space-between; gap:10px; align-items:flex-start; }
+  .card-title strong { font-size:18px; line-height:1.25; }
+  .pill { display:inline-block; padding:2px 6px; color:var(--ink); background:#e8ecea; font-size:12px; white-space:nowrap; }
+  .pill.g { background:var(--teal-soft); } .pill.y { background:#f4ead6; } .pill.r { background:#f4dfdb; }
+  .prompt { margin:9px 0; color:var(--muted); }
+  .mini { margin:7px 0 0; line-height:1.45; font-size:14px; }
+  .card-actions { display:flex; gap:8px; margin-top:13px; }
+  .text-button { padding:0; color:var(--blue); background:transparent; border:0; text-decoration:underline; }
+  .text-button.delete { color:var(--red); }
+  .empty { grid-column:1 / -1; padding:18px 0; color:var(--muted); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+  .backup { margin-top:24px; padding-top:18px; border-top:1px solid var(--line); }
+  .backup-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; }
+  .backup small { display:block; margin-top:8px; color:var(--muted); line-height:1.45; }
+  @media (max-width:720px) { .shell { padding:20px 14px 36px; } header { display:block; } .summary { margin-top:16px; max-width:360px; } .form-grid { grid-template-columns:1fr; } .field.full { grid-column:auto; } .card-face .phrase { font-size:22px; } }
+</style>
+</head>
+<body>
+<main class="shell">
+  <header>
+    <div>
+      <h1>IELTS 短语卡</h1>
+      <div class="muted">本地保存 · 到期复习 · 可导出迁移</div>
+    </div>
+    <div class="summary" aria-label="短语卡统计">
+      <div class="stat"><strong id="totalCount">0</strong><span>全部</span></div>
+      <div class="stat"><strong id="reviewCount">0</strong><span>今日到期</span></div>
+      <div class="stat"><strong id="gCount">0</strong><span>G 卡</span></div>
+    </div>
+  </header>
+
+  <section class="section" aria-labelledby="formHeading">
+    <h2 id="formHeading">新建短语卡</h2>
+    <form id="cardForm">
+      <div class="form-grid">
+        <label class="field">英文短语
+          <input id="phrase" type="text" maxlength="180" required placeholder="例如：break the mould">
+        </label>
+        <label class="field">个人化提示
+          <input id="prompt" type="text" maxlength="180" required placeholder="例如：Education: school subjects">
+        </label>
+        <label class="field">英文释义
+          <textarea id="definition" required placeholder="用简短英文解释含义"></textarea>
+        </label>
+        <label class="field">固定搭配或语法框架
+          <textarea id="pattern" required placeholder="例如：break the mould of + noun"></textarea>
+        </label>
+        <label class="field full">我的原创句子
+          <textarea id="sentence" required placeholder="写自己的句子，不照抄原书例句"></textarea>
+        </label>
+        <fieldset class="field"><legend>用途标签</legend><div class="choices">
+          <label class="choice"><input type="radio" name="tag" value="W" required> W 写作</label>
+          <label class="choice"><input type="radio" name="tag" value="S"> S 口语</label>
+          <label class="choice"><input type="radio" name="tag" value="WS" checked> WS 两者</label>
+        </div></fieldset>
+        <fieldset class="field"><legend>当前状态</legend><div class="choices">
+          <label class="choice"><input type="radio" name="status" value="G"> G 能自主造句</label>
+          <label class="choice"><input type="radio" name="status" value="Y" checked> Y 需要提示</label>
+          <label class="choice"><input type="radio" name="status" value="R"> R 两次想不出/用错</label>
+        </div></fieldset>
+      </div>
+      <div class="toolbar">
+        <button class="button primary" type="submit" id="saveButton">保存短语卡</button>
+        <button class="button" type="button" id="cancelEdit" hidden>取消编辑</button>
+      </div>
+    </form>
+    <div id="notice" class="notice" role="status"></div>
+  </section>
+
+  <section class="review" id="reviewPanel" aria-live="polite">
+    <div class="review-top"><div><h2>复习模式</h2><div class="muted" id="reviewMeta"></div></div><button class="button" type="button" id="closeReview">关闭</button></div>
+    <div class="card-face" id="cardFace"></div>
+    <div class="review-actions" id="reviewActions"></div>
+  </section>
+
+  <section class="section" aria-labelledby="libraryHeading">
+    <div class="toolbar">
+      <label class="field">搜索
+        <input id="search" type="text" placeholder="短语、提示、搭配或句子">
+      </label>
+      <label class="field">用途
+        <select id="tagFilter"><option value="all">全部标签</option><option value="W">W 写作</option><option value="S">S 口语</option><option value="WS">WS 两者</option></select>
+      </label>
+      <label class="field">状态
+        <select id="statusFilter"><option value="all">全部状态</option><option value="G">G 已掌握</option><option value="Y">Y 需提示</option><option value="R">R 优先复习</option></select>
+      </label>
+      <button class="button primary" type="button" id="startReview">复习今日到期卡</button>
+    </div>
+    <div class="list-head"><h2 id="libraryHeading">我的卡片</h2><span class="muted" id="shownCount"></span></div>
+    <div class="cards" id="cardList"></div>
+  </section>
+
+  <section class="backup" aria-labelledby="backupHeading">
+    <h2 id="backupHeading">备份与迁移</h2>
+    <div class="backup-actions">
+      <button class="button" type="button" id="exportButton">导出全部卡片（JSON）</button>
+      <label class="button">导入备份（JSON）<input id="importInput" type="file" accept="application/json,.json" hidden></label>
+    </div>
+    <small>卡片会自动保存在此浏览器。换电脑或清理浏览器前，先导出 JSON；在新电脑打开本工具后导入即可。导入会与现有卡片合并，重复短语可手动编辑或删除。</small>
+  </section>
+</main>
+<script>
+(() => {
+  const storageKey = 'ielts_phrase_cards_v1';
+  const form = document.getElementById('cardForm');
+  const notice = document.getElementById('notice');
+  const reviewPanel = document.getElementById('reviewPanel');
+  const cardFace = document.getElementById('cardFace');
+  const reviewActions = document.getElementById('reviewActions');
+  const intervals = [1, 3, 7, 14, 30, 60];
+  let cards = loadCards();
+  let editingId = null;
+  let reviewQueue = [];
+  let currentReviewId = null;
+  let showingBack = false;
+
+  function dateKey(date = new Date()) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  function addDays(from, days) {
+    const date = new Date(`${from}T12:00:00`);
+    date.setDate(date.getDate() + days);
+    return dateKey(date);
+  }
+
+  function normaliseCard(card) {
+    const stage = Number.isInteger(card.stage) ? Math.max(0, Math.min(card.stage, intervals.length)) : 0;
+    return {...card, stage, dueDate:/^\d{4}-\d{2}-\d{2}$/.test(card.dueDate || '') ? card.dueDate : dateKey(), reviews:Number.isInteger(card.reviews) ? card.reviews : 0, lapses:Number.isInteger(card.lapses) ? card.lapses : 0};
+  }
+
+  function loadCards() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      return Array.isArray(saved) ? saved.filter(isValidCard).map(normaliseCard) : [];
+    } catch (_) { return []; }
+  }
+
+  function isValidCard(card) {
+    return card && typeof card.id === 'string' && typeof card.phrase === 'string' && typeof card.prompt === 'string';
+  }
+
+  function saveCards() {
+    localStorage.setItem(storageKey, JSON.stringify(cards));
+    render();
+  }
+
+  function id() {
+    return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  }
+
+  function getRadio(name) {
+    return form.querySelector(`input[name="${name}"]:checked`).value;
+  }
+
+  function setNotice(message, error = false) {
+    notice.textContent = message;
+    notice.className = error ? 'notice error' : 'notice';
+  }
+
+  function clean(value) { return value.trim(); }
+
+  function cardFromForm() {
+    return {
+      id: editingId || id(),
+      phrase: clean(document.getElementById('phrase').value),
+      prompt: clean(document.getElementById('prompt').value),
+      definition: clean(document.getElementById('definition').value),
+      pattern: clean(document.getElementById('pattern').value),
+      sentence: clean(document.getElementById('sentence').value),
+      tag: getRadio('tag'),
+      status: getRadio('status'),
+      createdAt: editingId ? cards.find(card => card.id === editingId).createdAt : new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      reviews: editingId ? cards.find(card => card.id === editingId).reviews || 0 : 0,
+      lapses: editingId ? cards.find(card => card.id === editingId).lapses || 0 : 0,
+      stage: editingId ? cards.find(card => card.id === editingId).stage || 0 : 0,
+      dueDate: editingId ? cards.find(card => card.id === editingId).dueDate || dateKey() : dateKey()
+    };
+  }
+
+  form.addEventListener('submit', event => {
+    event.preventDefault();
+    const card = cardFromForm();
+    if (!card.phrase || !card.prompt || !card.definition || !card.pattern || !card.sentence) {
+      setNotice('请完成全部字段后再保存。', true);
+      return;
+    }
+    const duplicate = cards.find(item => item.phrase.toLowerCase() === card.phrase.toLowerCase() && item.id !== card.id);
+    if (duplicate && !confirm('已有同名短语卡。仍要保存为另一张卡吗？')) return;
+    if (editingId) cards = cards.map(item => item.id === editingId ? card : item);
+    else cards.unshift(card);
+    const message = editingId ? '短语卡已更新。' : '短语卡已保存到本机。';
+    resetForm();
+    saveCards();
+    setNotice(message);
+  });
+
+  document.getElementById('cancelEdit').addEventListener('click', () => { resetForm(); setNotice('已取消编辑。'); });
+  document.getElementById('search').addEventListener('input', renderList);
+  document.getElementById('tagFilter').addEventListener('change', renderList);
+  document.getElementById('statusFilter').addEventListener('change', renderList);
+  document.getElementById('startReview').addEventListener('click', startReview);
+  document.getElementById('closeReview').addEventListener('click', closeReview);
+  document.getElementById('exportButton').addEventListener('click', exportCards);
+  document.getElementById('importInput').addEventListener('change', importCards);
+
+  function resetForm() {
+    form.reset();
+    form.querySelector('input[name="tag"][value="WS"]').checked = true;
+    form.querySelector('input[name="status"][value="Y"]').checked = true;
+    editingId = null;
+    document.getElementById('saveButton').textContent = '保存短语卡';
+    document.getElementById('cancelEdit').hidden = true;
+  }
+
+  function editCard(cardId) {
+    const card = cards.find(item => item.id === cardId);
+    if (!card) return;
+    editingId = card.id;
+    document.getElementById('phrase').value = card.phrase;
+    document.getElementById('prompt').value = card.prompt;
+    document.getElementById('definition').value = card.definition || '';
+    document.getElementById('pattern').value = card.pattern || '';
+    document.getElementById('sentence').value = card.sentence || '';
+    form.querySelector(`input[name="tag"][value="${card.tag}"]`).checked = true;
+    form.querySelector(`input[name="status"][value="${card.status}"]`).checked = true;
+    document.getElementById('saveButton').textContent = '更新短语卡';
+    document.getElementById('cancelEdit').hidden = false;
+    form.scrollIntoView({behavior:'smooth', block:'start'});
+    document.getElementById('phrase').focus();
+  }
+
+  function deleteCard(cardId) {
+    const card = cards.find(item => item.id === cardId);
+    if (!card || !confirm(`删除“${card.phrase}”吗？此操作无法撤销。`)) return;
+    cards = cards.filter(item => item.id !== cardId);
+    if (editingId === cardId) resetForm();
+    saveCards();
+    setNotice('短语卡已删除。');
+  }
+
+  function filteredCards() {
+    const query = document.getElementById('search').value.trim().toLowerCase();
+    const tag = document.getElementById('tagFilter').value;
+    const status = document.getElementById('statusFilter').value;
+    return cards.filter(card => {
+      const haystack = [card.phrase, card.prompt, card.definition, card.pattern, card.sentence].join(' ').toLowerCase();
+      return (!query || haystack.includes(query)) && (tag === 'all' || card.tag === tag) && (status === 'all' || card.status === status);
+    });
+  }
+
+  function statusLabel(status) { return {G:'G 已掌握', Y:'Y 需提示', R:'R 优先复习'}[status]; }
+  function tagLabel(tag) { return {W:'W 写作', S:'S 口语', WS:'WS 两者'}[tag]; }
+  function dateLabel(value) {
+    const date = new Date(`${value}T12:00:00`);
+    return `${date.getMonth() + 1}/${date.getDate()}`;
+  }
+  function isDue(card) { return card.dueDate <= dateKey(); }
+  function dueCards() {
+    const priority = {R:0, Y:1, G:2};
+    return cards.filter(isDue).sort((a, b) => priority[a.status] - priority[b.status] || a.dueDate.localeCompare(b.dueDate) || a.phrase.localeCompare(b.phrase));
+  }
+  function escapeHtml(value) { return String(value || '').replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char])); }
+
+  function renderList() {
+    const shown = filteredCards();
+    document.getElementById('shownCount').textContent = `显示 ${shown.length} / ${cards.length} 张`;
+    const list = document.getElementById('cardList');
+    if (!shown.length) {
+      list.innerHTML = `<div class="empty">${cards.length ? '没有符合筛选条件的短语卡。' : '还没有短语卡。先输入第一条表达。'}</div>`;
+      return;
+    }
+    list.innerHTML = shown.map(card => `<article class="card"><div class="card-title"><strong>${escapeHtml(card.phrase)}</strong><span class="pill ${card.status.toLowerCase()}">${statusLabel(card.status)}</span></div><div class="prompt">${escapeHtml(card.prompt)} · ${tagLabel(card.tag)} · 下次 ${dateLabel(card.dueDate)}</div><p class="mini"><b>搭配：</b>${escapeHtml(card.pattern)}</p><p class="mini"><b>我的句子：</b>${escapeHtml(card.sentence)}</p><div class="card-actions"><button class="text-button" type="button" data-edit="${card.id}">编辑</button><button class="text-button delete" type="button" data-delete="${card.id}">删除</button></div></article>`).join('');
+    list.querySelectorAll('[data-edit]').forEach(button => button.addEventListener('click', () => editCard(button.dataset.edit)));
+    list.querySelectorAll('[data-delete]').forEach(button => button.addEventListener('click', () => deleteCard(button.dataset.delete)));
+  }
+
+  function renderSummary() {
+    document.getElementById('totalCount').textContent = cards.length;
+    document.getElementById('reviewCount').textContent = dueCards().length;
+    document.getElementById('gCount').textContent = cards.filter(card => card.status === 'G').length;
+  }
+
+  function render() { renderSummary(); renderList(); }
+
+  function startReview() {
+    reviewQueue = dueCards();
+    if (!cards.length) { setNotice('先保存至少一张短语卡，才能开始复习。', true); return; }
+    if (!reviewQueue.length) { setNotice('今天没有到期卡。明天再来复习，或继续添加新卡。'); return; }
+    reviewPanel.classList.add('visible');
+    showNextCard();
+    reviewPanel.scrollIntoView({behavior:'smooth', block:'start'});
+  }
+
+  function closeReview() { reviewPanel.classList.remove('visible'); currentReviewId = null; }
+
+  function showNextCard() {
+    if (!reviewQueue.length) {
+      cardFace.innerHTML = '<div class="side">本轮结束</div><div class="phrase">已完成当前复习队列。</div>';
+      reviewActions.innerHTML = '<button class="button primary" type="button" id="restartReview">再复习一轮</button>';
+      document.getElementById('restartReview').addEventListener('click', startReview);
+      document.getElementById('reviewMeta').textContent = '';
+      return;
+    }
+    const card = reviewQueue.shift();
+    currentReviewId = card.id;
+    showingBack = false;
+    cardFace.innerHTML = `<div class="side">正面 · 先说出释义、搭配和自己的句子</div><div class="phrase">${escapeHtml(card.phrase)}</div><div class="prompt">${escapeHtml(card.prompt)}</div>`;
+    reviewActions.innerHTML = '<button class="button primary" type="button" id="showAnswer">翻到背面</button>';
+    document.getElementById('showAnswer').addEventListener('click', () => revealCard(card));
+    document.getElementById('reviewMeta').textContent = `剩余 ${reviewQueue.length + 1} 张 · R 卡优先，再按到期日期`;
+  }
+
+  function revealCard(card) {
+    showingBack = true;
+    cardFace.innerHTML = `<div class="side">背面</div><div class="detail"><b>英文释义：</b>${escapeHtml(card.definition)}\n\n<b>搭配/框架：</b>${escapeHtml(card.pattern)}\n\n<b>我的句子：</b>${escapeHtml(card.sentence)}\n\n<b>用途：</b>${tagLabel(card.tag)}</div>`;
+    reviewActions.innerHTML = '<button class="button status-g" type="button" data-grade="G">G 能自主造句</button><button class="button status-y" type="button" data-grade="Y">Y 需要提示</button><button class="button status-r" type="button" data-grade="R">R 想不出/用错</button>';
+    reviewActions.querySelectorAll('[data-grade]').forEach(button => button.addEventListener('click', () => gradeCard(card.id, button.dataset.grade)));
+  }
+
+  function gradeCard(cardId, status) {
+    const today = dateKey();
+    cards = cards.map(card => {
+      if (card.id !== cardId) return card;
+      let stage = card.stage || 0;
+      let dueDate;
+      let lapses = card.lapses || 0;
+      if (status === 'G') {
+        stage = Math.min(stage + 1, intervals.length);
+        dueDate = addDays(today, intervals[Math.max(0, stage - 1)]);
+      } else if (status === 'Y') {
+        dueDate = addDays(today, 1);
+      } else if (status === 'R') {
+        stage = 0;
+        lapses += 1;
+        dueDate = addDays(today, 1);
+      } else {
+        dueDate = addDays(today, 1);
+      }
+      return {...card, status, stage, dueDate, lapses, reviews:(card.reviews || 0) + 1, updatedAt:new Date().toISOString()};
+    });
+    saveCards();
+    showNextCard();
+  }
+
+  function exportCards() {
+    const payload = {version:1, exportedAt:new Date().toISOString(), cards};
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `ielts-phrase-cards-${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setNotice('备份文件已导出。请把 JSON 文件保存在你能找到的位置。');
+  }
+
+  function importCards(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const payload = JSON.parse(reader.result);
+        const incoming = Array.isArray(payload) ? payload : payload.cards;
+        if (!Array.isArray(incoming)) throw new Error('无卡片数据');
+        const valid = incoming.filter(isValidCard).map(card => normaliseCard({...card, id:card.id || id(), tag:['W','S','WS'].includes(card.tag) ? card.tag : 'WS', status:['G','Y','R'].includes(card.status) ? card.status : 'Y'}));
+        if (!valid.length) throw new Error('无有效卡片');
+        const existing = new Map(cards.map(card => [card.id, card]));
+        valid.forEach(card => existing.set(card.id, card));
+        cards = [...existing.values()].sort((a,b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
+        saveCards();
+        setNotice(`已导入 ${valid.length} 张卡片。`);
+      } catch (_) { setNotice('导入失败：请选择由本工具导出的 JSON 文件。', true); }
+      event.target.value = '';
+    };
+    reader.readAsText(file, 'utf-8');
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
