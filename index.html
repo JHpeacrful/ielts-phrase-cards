@@ -38,6 +38,7 @@
   .button { padding:8px 12px; color:var(--ink); background:transparent; border:1px solid var(--ink); border-radius:2px; }
   .button.primary { color:#fff; background:var(--teal); border-color:var(--teal); }
   .button.danger { color:var(--red); border-color:var(--red); }
+  .button:disabled { cursor:not-allowed; opacity:.4; }
   .button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline:2px solid var(--blue); outline-offset:2px; }
   .notice { min-height:24px; margin:14px 0 0; color:var(--teal); font-weight:bold; }
   .notice.error { color:var(--red); }
@@ -167,6 +168,8 @@
   let cards = loadCards();
   let editingId = null;
   let reviewQueue = [];
+  let reviewGrades = new Map();
+  let currentReviewIndex = 0;
   let currentReviewId = null;
   let showingBack = false;
 
@@ -345,40 +348,82 @@
 
   function startReview() {
     reviewQueue = dueCards();
+    reviewGrades = new Map();
+    currentReviewIndex = 0;
     if (!cards.length) { setNotice('先保存至少一张短语卡，才能开始复习。', true); return; }
     if (!reviewQueue.length) { setNotice('今天没有到期卡。明天再来复习，或继续添加新卡。'); return; }
     reviewPanel.classList.add('visible');
-    showNextCard();
+    showCurrentCard();
     reviewPanel.scrollIntoView({behavior:'smooth', block:'start'});
   }
 
   function closeReview() { reviewPanel.classList.remove('visible'); currentReviewId = null; }
 
-  function showNextCard() {
+  function showCurrentCard() {
     if (!reviewQueue.length) {
-      cardFace.innerHTML = '<div class="side">本轮结束</div><div class="phrase">已完成当前复习队列。</div>';
-      reviewActions.innerHTML = '<button class="button primary" type="button" id="restartReview">再复习一轮</button>';
-      document.getElementById('restartReview').addEventListener('click', startReview);
-      document.getElementById('reviewMeta').textContent = '';
+      showReviewComplete();
       return;
     }
-    const card = reviewQueue.shift();
+    const card = reviewQueue[currentReviewIndex];
     currentReviewId = card.id;
+    showCardFront(card);
+    updateReviewMeta();
+  }
+
+  function reviewNavigationButton(direction) {
+    const isPrevious = direction === -1;
+    const disabled = isPrevious ? currentReviewIndex === 0 : currentReviewIndex === reviewQueue.length - 1;
+    const label = isPrevious ? '← 上一条' : '下一条 →';
+    return `<button class="button" type="button" data-review-nav="${direction}" title="${isPrevious ? '上一条' : '下一条'}"${disabled ? ' disabled' : ''}>${label}</button>`;
+  }
+
+  function bindReviewNavigation() {
+    reviewActions.querySelectorAll('[data-review-nav]').forEach(button => button.addEventListener('click', () => navigateReview(Number(button.dataset.reviewNav))));
+  }
+
+  function navigateReview(direction) {
+    const nextIndex = currentReviewIndex + direction;
+    if (nextIndex < 0 || nextIndex >= reviewQueue.length) return;
+    currentReviewIndex = nextIndex;
+    showCurrentCard();
+  }
+
+  function updateReviewMeta() {
+    document.getElementById('reviewMeta').textContent = `剩余 ${reviewQueue.length - reviewGrades.size} 张 · 当前 ${currentReviewIndex + 1}/${reviewQueue.length} · R 卡优先，再按到期日期`;
+  }
+
+  function showReviewComplete() {
+    cardFace.innerHTML = '<div class="side">本轮结束</div><div class="phrase">已完成当前复习队列。</div>';
+    const historyButton = reviewQueue.length ? '<button class="button" type="button" id="reviewLast">← 查看上一条</button>' : '';
+    reviewActions.innerHTML = `${historyButton}<button class="button primary" type="button" id="restartReview">再复习一轮</button>`;
+    if (reviewQueue.length) document.getElementById('reviewLast').addEventListener('click', () => { currentReviewIndex = reviewQueue.length - 1; showCurrentCard(); });
+    document.getElementById('restartReview').addEventListener('click', startReview);
+    document.getElementById('reviewMeta').textContent = '';
+  }
+
+  function showCardFront(card) {
     showingBack = false;
     cardFace.innerHTML = `<div class="side">正面 · 先说出释义、搭配和自己的句子</div><div class="phrase">${escapeHtml(card.phrase)}</div><div class="prompt">${escapeHtml(card.prompt)}</div>`;
-    reviewActions.innerHTML = '<button class="button primary" type="button" id="showAnswer">翻到背面</button>';
+    reviewActions.innerHTML = `${reviewNavigationButton(-1)}<button class="button primary" type="button" id="showAnswer">翻到背面</button>${reviewNavigationButton(1)}`;
+    bindReviewNavigation();
     document.getElementById('showAnswer').addEventListener('click', () => revealCard(card));
-    document.getElementById('reviewMeta').textContent = `剩余 ${reviewQueue.length + 1} 张 · R 卡优先，再按到期日期`;
   }
 
   function revealCard(card) {
     showingBack = true;
     cardFace.innerHTML = `<div class="side">背面</div><div class="detail"><b>英文释义：</b>${escapeHtml(card.definition)}\n\n<b>搭配/框架：</b>${escapeHtml(card.pattern)}\n\n<b>我的句子：</b>${escapeHtml(card.sentence)}\n\n<b>用途：</b>${tagLabel(card.tag)}</div>`;
-    reviewActions.innerHTML = '<button class="button status-g" type="button" data-grade="G">G 能自主造句</button><button class="button status-y" type="button" data-grade="Y">Y 需要提示</button><button class="button status-r" type="button" data-grade="R">R 想不出/用错</button>';
+    const savedGrade = reviewGrades.get(card.id);
+    const gradeActions = savedGrade
+      ? `<span class="pill ${savedGrade.toLowerCase()}">本轮已评分：${statusLabel(savedGrade)}</span>`
+      : '<button class="button status-g" type="button" data-grade="G">G 能自主造句</button><button class="button status-y" type="button" data-grade="Y">Y 需要提示</button><button class="button status-r" type="button" data-grade="R">R 想不出/用错</button>';
+    reviewActions.innerHTML = `${reviewNavigationButton(-1)}<button class="button" type="button" id="showFront">返回正面</button>${reviewNavigationButton(1)}${gradeActions}`;
+    bindReviewNavigation();
+    document.getElementById('showFront').addEventListener('click', () => showCardFront(card));
     reviewActions.querySelectorAll('[data-grade]').forEach(button => button.addEventListener('click', () => gradeCard(card.id, button.dataset.grade)));
   }
 
   function gradeCard(cardId, status) {
+    if (reviewGrades.has(cardId)) return;
     const today = dateKey();
     cards = cards.map(card => {
       if (card.id !== cardId) return card;
@@ -399,8 +444,16 @@
       }
       return {...card, status, stage, dueDate, lapses, reviews:(card.reviews || 0) + 1, updatedAt:new Date().toISOString()};
     });
+    reviewGrades.set(cardId, status);
     saveCards();
-    showNextCard();
+    if (reviewGrades.size === reviewQueue.length) {
+      showReviewComplete();
+      return;
+    }
+    let nextIndex = reviewQueue.findIndex((card, index) => index > currentReviewIndex && !reviewGrades.has(card.id));
+    if (nextIndex === -1) nextIndex = reviewQueue.findIndex(card => !reviewGrades.has(card.id));
+    currentReviewIndex = nextIndex;
+    showCurrentCard();
   }
 
   function exportCards() {

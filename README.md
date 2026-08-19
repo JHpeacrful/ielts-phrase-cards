@@ -4,6 +4,7 @@
 
 - [打开短语卡工具](https://jhpeacrful.github.io/ielts-phrase-cards/)
 - [双语工具使用说明](./TOOL_README.md)
+- [更新说明](./CHANGELOG.md)
 
 短语卡只保存在当前浏览器；在清理浏览器数据或换设备前，请导出 JSON 备份。
 
