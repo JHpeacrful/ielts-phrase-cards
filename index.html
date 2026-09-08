@@ -28,6 +28,33 @@
   h2 { margin:0 0 16px; font-size:24px; line-height:1.15; }
   h3 { margin:0 0 7px; font-size:18px; }
   .shell { max-width:1180px; margin:0 auto; padding:34px 24px 64px; }
+  .top-nav { position:sticky; top:0; z-index:20; display:flex; align-items:center; gap:6px; margin:0 -24px 34px; padding:10px 24px; background:color-mix(in srgb, var(--paper) 94%, transparent); border-bottom:1px solid var(--line); backdrop-filter:blur(12px); }
+  .nav-tabs { display:flex; gap:4px; width:100%; }
+  .nav-tab { flex:1 1 0; min-height:40px; padding:8px 12px; color:var(--muted); background:transparent; border:1px solid transparent; border-radius:5px; font-weight:bold; text-align:center; transition:background-color .16s ease, color .16s ease, border-color .16s ease; }
+  .nav-tab:hover { color:var(--ink); background:var(--panel-soft); }
+  .nav-tab.active { color:var(--accent-strong); background:var(--accent-soft); border-color:color-mix(in srgb, var(--accent-strong) 45%, var(--line)); }
+  .nav-select { display:none; width:100%; margin:0; }
+  .view { display:none; animation:view-in .22s ease both; }
+  .view.active { display:block; }
+  @keyframes view-in { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
+  .overview-kicker { margin:0 0 8px; color:var(--accent-strong); font-size:13px; font-weight:bold; letter-spacing:.08em; text-transform:uppercase; }
+  .overview-grid { display:grid; grid-template-columns:1.35fr .65fr; gap:18px; margin-top:26px; }
+  .overview-panel { padding:20px; border:1px solid var(--line); border-radius:7px; background:var(--panel); }
+  .overview-panel h3 { margin-bottom:12px; }
+  .progress-track { height:9px; overflow:hidden; margin-top:12px; background:var(--panel-soft); border-radius:99px; }
+  .progress-bar { width:100%; height:100%; background:var(--accent); border-radius:inherit; transform:scaleX(0); transform-origin:left center; transition:transform .25s ease; }
+  .progress-meta { display:flex; justify-content:space-between; gap:12px; margin-top:9px; color:var(--muted); font-size:14px; }
+  .streak-value { display:block; color:var(--accent-strong); font-size:38px; line-height:1; font-variant-numeric:tabular-nums; }
+  .streak-label { display:block; margin-top:7px; color:var(--muted); }
+  .view-intro { max-width:70ch; margin:0 0 24px; color:var(--muted); }
+  .settings-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  .settings-block { padding:19px; border:1px solid var(--line); border-radius:7px; background:var(--panel); }
+  .settings-block h3 { padding-bottom:10px; border-bottom:1px solid var(--line); }
+  .settings-block .button { margin-top:8px; }
+  .settings-block small { display:block; margin-top:11px; color:var(--muted); line-height:1.5; }
+  .review.view { margin-top:0; }
+  .review:not(.visible) .card-face, .review:not(.visible) .review-actions { display:none; }
+  .review-empty { padding:30px 0 12px; color:var(--muted); }
   header { display:flex; justify-content:space-between; gap:32px; align-items:flex-start; padding-bottom:25px; border-bottom:1px solid var(--ink); }
   header > div:first-child { flex:1 1 auto; }
   .muted { color:var(--muted); line-height:1.5; }
@@ -41,6 +68,11 @@
   .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:21px 22px; }
   .field { display:block; min-width:0; }
   .field.full { grid-column:1 / -1; }
+  .field-shell { position:relative; }
+  .field-shell > input, .field-shell > textarea { padding-right:58px; }
+  .field-ai { position:absolute; right:8px; top:34px; min-width:38px; min-height:30px; padding:4px 8px; color:var(--accent-strong); background:var(--accent-soft); border:1px solid color-mix(in srgb, var(--accent-strong) 48%, var(--line)); border-radius:4px; font-size:12px; font-weight:bold; }
+  .field-ai:hover:not(:disabled) { background:var(--accent); color:#fffaf2; }
+  .field-ai:disabled { cursor:not-allowed; opacity:.5; }
   label, legend { font-weight:bold; }
   label.field, legend { font-size:15px; }
   input[type="text"], textarea, select, input[type="file"] { width:100%; margin-top:7px; padding:11px 12px; color:var(--ink); background:var(--panel); border:1px solid var(--line); border-radius:5px; transition:border-color .16s ease, box-shadow .16s ease, background-color .16s ease; }
@@ -92,8 +124,45 @@
   .backup-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; }
   .backup small { display:block; max-width:75ch; margin-top:10px; color:var(--muted); line-height:1.5; }
   .theme-toggle { margin-top:15px; color:var(--accent-strong); border-color:var(--accent-strong); }
+  .header-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:15px; }
+  .header-actions .button { margin-top:0; }
+  .ai-dialog { width:min(560px, calc(100vw - 32px)); padding:24px; color:var(--ink); background:var(--panel); border:1px solid var(--line); border-radius:8px; box-shadow:0 18px 50px rgba(0,0,0,.25); }
+  .ai-dialog::backdrop { background:rgba(16,20,24,.55); }
+  .ai-dialog h2 { margin-bottom:7px; }
+  .ai-dialog .note { margin:0 0 18px; color:var(--muted); }
+  .dialog-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:19px; }
+  .ai-status { min-height:24px; margin:14px 0 0; color:var(--muted); }
+  .ai-status.success { color:var(--accent-strong); }
+  .ai-status.error { color:var(--red); }
+  .ai-assist { color:var(--accent-strong); border-color:var(--accent-strong); }
+  .profile-row { display:grid; grid-template-columns:1fr auto; gap:10px; align-items:end; margin:16px 0 20px; }
+  .profile-row .field { margin:0; }
+  .profile-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+  .model-row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:9px; align-items:end; margin-top:7px; }
+  .model-row input { margin-top:0 !important; }
+  .model-row .button { min-height:44px; white-space:nowrap; }
+  .model-options { width:100%; margin-top:9px; }
+  .profile-list { display:flex; gap:7px; flex-wrap:wrap; margin:0 0 18px; }
+  .profile-chip { padding:7px 10px; color:var(--muted); background:var(--panel-soft); border:1px solid var(--line); border-radius:4px; }
+  .profile-chip.active { color:var(--accent-strong); border-color:var(--accent-strong); background:var(--accent-soft); }
+  .ai-workbench { position:fixed; top:112px; right:24px; width:min(620px, calc(100vw - 32px)); margin:0; padding:22px; }
+  .ai-workbench .workbench-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; }
+  .ai-workbench .workbench-head h2 { margin-bottom:4px; }
+  .workbench-meta { color:var(--muted); font-size:14px; }
+  .workbench-grid { display:grid; grid-template-columns:1.15fr .85fr; gap:12px; margin-top:18px; }
+  .workbench-grid label { display:block; }
+  .workbench-grid select { margin-top:6px; }
+  .preview-label { display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-top:18px; }
+  .preview-label small { color:var(--muted); font-weight:normal; }
+  #aiPreview { min-height:150px; margin-top:7px; }
+  .ai-workbench .dialog-actions { justify-content:flex-end; }
+  .ai-workbench .dialog-actions .button:first-child { margin-right:auto; }
+  .undo-button { color:var(--blue); border-color:var(--blue); }
   @media (max-width:760px) {
     .shell { padding:24px 16px 48px; }
+    .top-nav { margin:0 -16px 26px; padding:9px 16px; }
+    .nav-tabs { display:none; }
+    .nav-select { display:block; }
     header { display:block; }
     .summary { min-width:0; width:100%; max-width:390px; margin-top:20px; }
     .form-grid { grid-template-columns:1fr; gap:18px; }
@@ -103,6 +172,9 @@
     .card-face { min-height:210px; padding:21px; }
     .card-face .phrase { font-size:27px; }
     .list-head { margin-top:36px; }
+    .workbench-grid { grid-template-columns:1fr; }
+    .overview-grid, .settings-grid { grid-template-columns:1fr; }
+    .ai-workbench { top:auto; right:0; bottom:0; width:100%; max-width:none; border-radius:10px 10px 0 0; }
   }
   @media (prefers-reduced-motion:reduce) {
     *, *::before, *::after { scroll-behavior:auto !important; transition-duration:.01ms !important; animation-duration:.01ms !important; animation-iteration-count:1 !important; }
@@ -111,38 +183,104 @@
 </head>
 <body>
 <main class="shell">
-  <header>
-    <div>
-      <h1>IELTS 短语卡</h1>
-      <div class="muted">本地保存 · 到期复习 · 可导出迁移</div>
-      <button class="button theme-toggle" type="button" id="themeToggle" aria-pressed="false" title="切换页面颜色">深色模式</button>
+  <nav class="top-nav" aria-label="主导航">
+    <div class="nav-tabs" role="tablist" aria-label="页面导航">
+      <button class="nav-tab active" type="button" role="tab" aria-selected="true" data-view="overview">概览</button>
+      <button class="nav-tab" type="button" role="tab" aria-selected="false" data-view="learn">学习</button>
+      <button class="nav-tab" type="button" role="tab" aria-selected="false" data-view="review">复习</button>
+      <button class="nav-tab" type="button" role="tab" aria-selected="false" data-view="history">历史</button>
+      <button class="nav-tab" type="button" role="tab" aria-selected="false" data-view="settings">设置</button>
     </div>
-    <div class="summary" aria-label="短语卡统计">
-      <div class="stat"><strong id="totalCount">0</strong><span>全部</span></div>
-      <div class="stat"><strong id="reviewCount">0</strong><span>今日到期</span></div>
-      <div class="stat"><strong id="gCount">0</strong><span>G 卡</span></div>
-    </div>
-  </header>
+    <label class="nav-select-label" for="viewSelect" hidden>当前页面</label>
+    <select id="viewSelect" class="nav-select" aria-label="当前页面">
+      <option value="overview">概览</option><option value="learn">学习</option><option value="review">复习</option><option value="history">历史</option><option value="settings">设置</option>
+    </select>
+  </nav>
 
-  <section class="section" aria-labelledby="formHeading">
+  <section class="view active" data-view-panel="overview" aria-labelledby="overviewHeading">
+    <header>
+      <div>
+        <p class="overview-kicker">IELTS phrase cards</p>
+        <h1 id="overviewHeading">把今天的表达，变成明天的反应。</h1>
+        <div class="muted">本地保存 · 到期复习 · 可导出迁移</div>
+        <div class="header-actions">
+          <button class="button primary" type="button" data-go-view="learn">开始记录</button>
+          <button class="button" type="button" data-go-view="review">查看今日复习</button>
+        </div>
+      </div>
+      <div class="summary" aria-label="短语卡统计">
+        <div class="stat"><strong id="totalCount">0</strong><span>全部</span></div>
+        <div class="stat"><strong id="reviewCount">0</strong><span>今日到期</span></div>
+        <div class="stat"><strong id="gCount">0</strong><span>G 卡</span></div>
+      </div>
+    </header>
+    <div class="overview-grid">
+      <article class="overview-panel">
+        <h3>今日复习进度</h3>
+        <div class="progress-track" aria-hidden="true"><div id="todayProgressBar" class="progress-bar"></div></div>
+        <div class="progress-meta"><span id="todayProgressLabel">今日无需复习</span><strong id="todayProgressValue">0%</strong></div>
+      </article>
+      <article class="overview-panel">
+        <h3>连续学习</h3>
+        <span id="streakCount" class="streak-value">0</span><span class="streak-label">天连续有评分记录</span>
+      </article>
+    </div>
+  </section>
+
+  <dialog id="aiSettingsDialog" class="ai-dialog" aria-labelledby="aiSettingsHeading">
+    <h2 id="aiSettingsHeading">AI 设置</h2>
+    <p class="note">保存多个 OpenAI 兼容 API 配置，使用字段 AI 弹窗时可随时切换。密钥只保存在本机 App 数据中。</p>
+    <div id="profileList" class="profile-list" aria-label="模型配置列表"></div>
+    <div class="profile-row">
+      <label class="field">配置名称
+        <input id="aiProfileName" type="text" placeholder="例如：工作 API">
+      </label>
+      <button class="button" type="button" id="newAiProfile">新建配置</button>
+    </div>
+    <label class="field">API 地址
+      <input id="aiEndpoint" type="url" placeholder="https://api.example.com/v1">
+    </label>
+    <label class="field">模型名称
+      <div class="model-row"><input id="aiModel" type="text" placeholder="例如：gpt-4o-mini"><button class="button" type="button" id="fetchAiModels">获取模型</button></div>
+      <select id="aiModelOptions" class="model-options" aria-label="可用模型"><option value="">获取模型后可从列表选择</option></select>
+    </label>
+    <label class="field">API Key
+      <input id="aiApiKey" type="password" placeholder="粘贴你的 API Key；留空则保留已保存的密钥">
+    </label>
+    <div class="profile-actions">
+      <button class="button primary" type="button" id="saveAiSettings">保存配置</button>
+      <button class="button" type="button" id="testAiConnection">测试连接</button>
+      <button class="button danger" type="button" id="deleteAiProfile">删除配置</button>
+    </div>
+    <div class="dialog-actions"><button class="button" type="button" id="closeAiSettings">关闭</button></div>
+    <p id="aiSettingsNotice" class="ai-status" role="status"></p>
+  </dialog>
+
+  <dialog id="aiWorkbenchDialog" class="ai-dialog ai-workbench" aria-labelledby="aiWorkbenchHeading">
+    <div class="workbench-head"><div><h2 id="aiWorkbenchHeading">字段 AI 工作台</h2><div class="workbench-meta" id="aiWorkbenchMeta">选择一个字段开始生成</div></div><button class="button" type="button" id="closeAiWorkbench">关闭</button></div>
+    <div class="workbench-grid">
+      <label>使用配置<select id="aiWorkbenchProfile"></select></label>
+      <label>操作<select id="aiWorkbenchMode"><option value="generate">生成内容</option><option value="rewrite">改写当前内容</option><option value="regenerate">重新生成</option><option value="shorten">缩短表达</option><option value="expand">展开表达</option><option value="ielts">调整为 IELTS 表达</option></select></label>
+    </div>
+    <label class="preview-label" for="aiPreview">结果预览 <small id="aiPreviewHint">检查后再应用</small></label>
+    <textarea id="aiPreview" placeholder="AI 结果会先出现在这里"></textarea>
+    <p id="aiWorkbenchStatus" class="ai-status" role="status"></p>
+    <div class="dialog-actions"><button class="button undo-button" type="button" id="undoAiApply" hidden>撤销上次应用</button><button class="button" type="button" id="retryAi">再生成</button><button class="button primary" type="button" id="applyAi">应用结果</button></div>
+  </dialog>
+
+  <section class="view section" data-view-panel="learn" aria-labelledby="formHeading">
+    <p class="overview-kicker">学习</p>
     <h2 id="formHeading">新建短语卡</h2>
+    <p class="view-intro">把你真正想记住的表达写下来。短语字段由你亲自输入，其他字段可按需调用 AI 生成候选。</p>
     <form id="cardForm">
       <div class="form-grid">
         <label class="field">英文短语
           <input id="phrase" type="text" maxlength="180" required placeholder="例如：break the mould">
         </label>
-        <label class="field">个人化提示
-          <input id="prompt" type="text" maxlength="180" required placeholder="例如：Education: school subjects">
-        </label>
-        <label class="field">英文释义
-          <textarea id="definition" required placeholder="用简短英文解释含义"></textarea>
-        </label>
-        <label class="field">固定搭配或语法框架
-          <textarea id="pattern" required placeholder="例如：break the mould of + noun"></textarea>
-        </label>
-        <label class="field full">我的原创句子
-          <textarea id="sentence" required placeholder="写自己的句子，不照抄原书例句"></textarea>
-        </label>
+        <div class="field field-shell"><label for="prompt">个人化提示</label><input id="prompt" type="text" maxlength="180" required placeholder="例如：Education: school subjects"><button class="field-ai" type="button" data-ai-target="prompt" title="在个人化提示中使用 AI">AI</button></div>
+        <div class="field field-shell"><label for="definition">英文释义</label><textarea id="definition" required placeholder="用简短英文解释含义"></textarea><button class="field-ai" type="button" data-ai-target="definition" title="生成或改写英文释义">AI</button></div>
+        <div class="field field-shell"><label for="pattern">固定搭配或语法框架</label><textarea id="pattern" required placeholder="例如：break the mould of + noun"></textarea><button class="field-ai" type="button" data-ai-target="pattern" title="生成或改写固定搭配">AI</button></div>
+        <div class="field field-shell full"><label for="sentence">我的原创句子</label><textarea id="sentence" required placeholder="写自己的句子，不照抄原书例句"></textarea><button class="field-ai" type="button" data-ai-target="sentence" title="生成或改写原创句子">AI</button></div>
         <fieldset class="field"><legend>用途标签</legend><div class="choices">
           <label class="choice"><input type="radio" name="tag" value="W" required> W 写作</label>
           <label class="choice"><input type="radio" name="tag" value="S"> S 口语</label>
@@ -156,19 +294,25 @@
       </div>
       <div class="toolbar">
         <button class="button primary" type="submit" id="saveButton">保存短语卡</button>
+        <button class="button ai-assist" type="button" id="aiAssist">打开 AI 工作台</button>
+        <button class="button undo-button" type="button" id="undoAiApplyForm" hidden>撤销 AI 应用</button>
         <button class="button" type="button" id="cancelEdit" hidden>取消编辑</button>
       </div>
     </form>
     <div id="notice" class="notice" role="status"></div>
   </section>
 
-  <section class="review" id="reviewPanel" aria-live="polite">
-    <div class="review-top"><div><h2>复习模式</h2><div class="muted" id="reviewMeta"></div></div><button class="button" type="button" id="closeReview">关闭</button></div>
+  <section class="view review" id="reviewPanel" data-view-panel="review" aria-live="polite">
+    <div class="review-top"><div><p class="overview-kicker">复习</p><h2>复习模式</h2><div class="muted" id="reviewMeta"></div></div><button class="button" type="button" id="closeReview">返回概览</button></div>
+    <div class="review-empty" id="reviewEmpty"><p>只显示今天到期的卡片，并沿用 R / Y / G 评分算法。</p><button class="button primary" type="button" id="startReview">开始今日复习</button></div>
     <div class="card-face" id="cardFace"></div>
     <div class="review-actions" id="reviewActions"></div>
   </section>
 
-  <section class="section" aria-labelledby="libraryHeading">
+  <section class="view section" data-view-panel="history" aria-labelledby="libraryHeading">
+    <p class="overview-kicker">历史</p>
+    <h2 id="libraryHeading">卡片库历史</h2>
+    <p class="view-intro">搜索、筛选、编辑和管理全部短语卡。复习评分会直接更新这里的状态与下次到期日。</p>
     <div class="toolbar">
       <label class="field">搜索
         <input id="search" type="text" placeholder="短语、提示、搭配或句子">
@@ -179,39 +323,87 @@
       <label class="field">状态
         <select id="statusFilter"><option value="all">全部状态</option><option value="G">G 已掌握</option><option value="Y">Y 需提示</option><option value="R">R 优先复习</option></select>
       </label>
-      <button class="button primary" type="button" id="startReview">复习今日到期卡</button>
     </div>
-    <div class="list-head"><h2 id="libraryHeading">我的卡片</h2><span class="muted" id="shownCount"></span></div>
+    <div class="list-head"><h3>我的卡片</h3><span class="muted" id="shownCount"></span></div>
     <div class="cards" id="cardList"></div>
   </section>
 
-  <section class="backup" aria-labelledby="backupHeading">
-    <h2 id="backupHeading">备份与迁移</h2>
-    <div class="backup-actions">
-      <button class="button" type="button" id="exportButton">导出全部卡片（JSON）</button>
-      <label class="button">导入备份（JSON）<input id="importInput" type="file" accept="application/json,.json" hidden></label>
+  <section class="view section" data-view-panel="settings" aria-labelledby="settingsHeading">
+    <p class="overview-kicker">设置</p>
+    <h2 id="settingsHeading">工具设置</h2>
+    <p class="view-intro">把外观、AI 配置和数据备份放在一个清晰的工作台里。</p>
+    <div class="settings-grid">
+      <article class="settings-block"><h3>外观</h3><p class="muted">调整页面颜色，偏好会保存在本机。</p><button class="button theme-toggle" type="button" id="themeToggle" aria-pressed="false" title="切换页面颜色">深色模式</button></article>
+      <article class="settings-block"><h3>AI 配置</h3><p class="muted">管理多个 OpenAI 兼容 API，并在字段工作台中切换模型。</p><button class="button" type="button" id="aiSettingsButton">打开 AI 设置</button></article>
+      <article class="settings-block"><h3 id="backupHeading">数据备份</h3><p class="muted">导出或导入你的卡片库，密钥不会进入 JSON 文件。</p><div class="backup-actions"><button class="button" type="button" id="exportButton">导出 JSON</button><label class="button">导入 JSON<input id="importInput" type="file" accept="application/json,.json" hidden></label></div><small>导入会与现有卡片合并，重复短语可手动编辑或删除。</small></article>
     </div>
-    <small>卡片会自动保存在此浏览器。换电脑或清理浏览器前，先导出 JSON；在新电脑打开本工具后导入即可。导入会与现有卡片合并，重复短语可手动编辑或删除。</small>
   </section>
 </main>
 <script>
 (() => {
   const storageKey = 'ielts_phrase_cards_v1';
+  const reviewLogKey = 'ielts_phrase_review_log_v1';
   const themeStorageKey = 'ielts_phrase_theme_v1';
+  const appBridge = window.ieltsApp || {};
   const form = document.getElementById('cardForm');
   const notice = document.getElementById('notice');
   const themeToggle = document.getElementById('themeToggle');
+  const aiSettingsButton = document.getElementById('aiSettingsButton');
+  const aiSettingsDialog = document.getElementById('aiSettingsDialog');
+  const aiWorkbenchDialog = document.getElementById('aiWorkbenchDialog');
+  const aiEndpoint = document.getElementById('aiEndpoint');
+  const aiModel = document.getElementById('aiModel');
+  const aiApiKey = document.getElementById('aiApiKey');
+  const aiProfileName = document.getElementById('aiProfileName');
+  const fetchAiModelsButton = document.getElementById('fetchAiModels');
+  const aiModelOptions = document.getElementById('aiModelOptions');
+  const profileList = document.getElementById('profileList');
+  const workbenchProfile = document.getElementById('aiWorkbenchProfile');
+  const workbenchMode = document.getElementById('aiWorkbenchMode');
+  const aiPreview = document.getElementById('aiPreview');
+  const aiWorkbenchStatus = document.getElementById('aiWorkbenchStatus');
+  const aiSettingsNotice = document.getElementById('aiSettingsNotice');
+  const aiAssistButton = document.getElementById('aiAssist');
+  const reviewEmpty = document.getElementById('reviewEmpty');
   const reviewPanel = document.getElementById('reviewPanel');
   const cardFace = document.getElementById('cardFace');
   const reviewActions = document.getElementById('reviewActions');
   const intervals = [1, 3, 7, 14, 30, 60];
   let cards = loadCards();
+  let reviewLog = loadReviewLog();
   let editingId = null;
   let reviewQueue = [];
   let reviewGrades = new Map();
   let currentReviewIndex = 0;
   let currentReviewId = null;
   let showingBack = false;
+  let aiSettings = { activeProfileId: '', profiles: [] };
+  let selectedProfileId = '';
+  let aiTarget = null;
+  let aiSelection = { start: 0, end: 0 };
+  let aiLastRequest = null;
+  let lastAiApply = null;
+
+  const viewNames = {overview:'概览', learn:'学习', review:'复习', history:'历史', settings:'设置'};
+  function switchView(view, updateHash = true) {
+    const next = viewNames[view] ? view : 'overview';
+    document.querySelectorAll('[data-view-panel]').forEach(panel => panel.classList.toggle('active', panel.dataset.viewPanel === next));
+    document.querySelectorAll('.nav-tab').forEach(tab => {
+      const active = tab.dataset.view === next;
+      tab.classList.toggle('active', active);
+      tab.setAttribute('aria-selected', String(active));
+    });
+    const select = document.getElementById('viewSelect');
+    if (select) select.value = next;
+    if (updateHash && location.hash !== `#${next}`) history.replaceState(null, '', `#${next}`);
+    if (next === 'learn') document.getElementById('phrase')?.focus({preventScroll:true});
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+  document.querySelectorAll('.nav-tab').forEach(tab => tab.addEventListener('click', () => switchView(tab.dataset.view)));
+  document.getElementById('viewSelect').addEventListener('change', event => switchView(event.target.value));
+  document.querySelectorAll('[data-go-view]').forEach(button => button.addEventListener('click', () => switchView(button.dataset.goView)));
+  window.addEventListener('hashchange', () => switchView(location.hash.slice(1), false));
+  switchView(location.hash.slice(1) || 'overview', false);
 
   function applyTheme(theme, persist = false) {
     const isDark = theme === 'dark';
@@ -226,6 +418,202 @@
     applyTheme(nextTheme, true);
   });
   applyTheme(localStorage.getItem(themeStorageKey) === 'dark' ? 'dark' : 'light');
+
+  function setAiNotice(message, kind = '') {
+    aiSettingsNotice.textContent = message;
+    aiSettingsNotice.className = `ai-status${kind ? ` ${kind}` : ''}`;
+  }
+
+  function setWorkbenchStatus(message, kind = '') {
+    aiWorkbenchStatus.textContent = message;
+    aiWorkbenchStatus.className = `ai-status${kind ? ` ${kind}` : ''}`;
+  }
+
+  function renderProfiles() {
+    profileList.innerHTML = aiSettings.profiles.length
+      ? aiSettings.profiles.map(profile => `<button class="profile-chip${profile.id === selectedProfileId ? ' active' : ''}" type="button" data-profile-id="${profile.id}">${escapeHtml(profile.name)} · ${escapeHtml(profile.model || '未填模型')}</button>`).join('')
+      : '<span class="muted">还没有配置。先新建一个 API 配置。</span>';
+    profileList.querySelectorAll('[data-profile-id]').forEach(button => button.addEventListener('click', () => selectProfile(button.dataset.profileId)));
+    workbenchProfile.innerHTML = aiSettings.profiles.length
+      ? aiSettings.profiles.map(profile => `<option value="${profile.id}">${escapeHtml(profile.name)} · ${escapeHtml(profile.model || '未填模型')}</option>`).join('')
+      : '<option value="">请先在设置中添加配置</option>';
+    workbenchProfile.value = selectedProfileId || aiSettings.activeProfileId || aiSettings.profiles[0]?.id || '';
+  }
+
+  function fillProfileForm(profile) {
+    aiProfileName.value = profile?.name || '';
+    aiEndpoint.value = profile?.endpoint || '';
+    aiModel.value = profile?.model || '';
+    aiApiKey.value = '';
+    aiApiKey.placeholder = profile?.hasApiKey ? '已保存密钥；留空则保持不变' : '粘贴你的 API Key';
+    aiModelOptions.innerHTML = profile?.model ? `<option value="${escapeHtml(profile.model)}">当前：${escapeHtml(profile.model)}</option><option value="">获取模型后可从列表选择</option>` : '<option value="">获取模型后可从列表选择</option>';
+    aiModelOptions.value = '';
+  }
+
+  function selectProfile(id) {
+    selectedProfileId = id;
+    const profile = aiSettings.profiles.find(item => item.id === id);
+    fillProfileForm(profile);
+    renderProfiles();
+  }
+
+  async function loadAiSettings() {
+    if (!appBridge.loadAiSettings) {
+      aiSettingsButton.title = 'AI 设置仅在 macOS App 中可用';
+      aiAssistButton.title = 'AI 补全仅在 macOS App 中可用';
+      document.querySelectorAll('.field-ai').forEach(button => { button.disabled = true; button.title = 'AI 仅在 macOS App 中可用'; });
+      return;
+    }
+    aiSettings = await appBridge.loadAiSettings();
+    selectedProfileId = aiSettings.activeProfileId || aiSettings.profiles[0]?.id || '';
+    selectProfile(selectedProfileId);
+  }
+
+  aiSettingsButton.addEventListener('click', async () => {
+    if (!appBridge.loadAiSettings) return setNotice('AI 设置仅在 macOS App 中可用。', true);
+    await loadAiSettings();
+    setAiNotice('密钥不会进入短语卡 JSON 导出文件。');
+    aiSettingsDialog.showModal();
+  });
+  document.getElementById('closeAiSettings').addEventListener('click', () => aiSettingsDialog.close());
+  document.getElementById('newAiProfile').addEventListener('click', () => {
+    selectedProfileId = '';
+    fillProfileForm({ name: '新配置' });
+    renderProfiles();
+    aiProfileName.focus();
+  });
+  document.getElementById('saveAiSettings').addEventListener('click', async () => {
+    if (!appBridge.saveAiSettings) return setAiNotice('当前不是 App 环境。', 'error');
+    try {
+      const id = selectedProfileId || `profile-${Date.now()}`;
+      const current = aiSettings.profiles.find(profile => profile.id === id);
+      const edited = { ...current, id, name: aiProfileName.value, endpoint: aiEndpoint.value, model: aiModel.value, apiKey: aiApiKey.value };
+      const profiles = aiSettings.profiles.some(profile => profile.id === id)
+        ? aiSettings.profiles.map(profile => profile.id === id ? edited : profile)
+        : [...aiSettings.profiles, edited];
+      const result = await appBridge.saveAiSettings({ activeProfileId: id, profiles });
+      aiSettings = result;
+      selectedProfileId = id;
+      selectProfile(id);
+      setAiNotice('配置已保存在本机。', 'success');
+    } catch (error) { setAiNotice(error.message || 'AI 设置保存失败。', 'error'); }
+  });
+  document.getElementById('testAiConnection').addEventListener('click', async () => {
+    if (!appBridge.testAi) return setAiNotice('当前不是 App 环境。', 'error');
+    try {
+      setAiNotice('正在测试连接…');
+      const current = aiSettings.profiles.find(profile => profile.id === selectedProfileId);
+      const result = await appBridge.testAi({ id: selectedProfileId, name: aiProfileName.value, endpoint: aiEndpoint.value, model: aiModel.value, apiKey: aiApiKey.value || current?.apiKey });
+      setAiNotice(`连接成功：${result.model} 返回“${result.reply}”`, 'success');
+    } catch (error) { setAiNotice(error.message || 'API 连接失败。', 'error'); }
+  });
+  aiModelOptions.addEventListener('change', () => {
+    if (aiModelOptions.value) aiModel.value = aiModelOptions.value;
+  });
+  fetchAiModelsButton.addEventListener('click', async () => {
+    if (!appBridge.fetchAiModels) return setAiNotice('当前不是 App 环境。', 'error');
+    const current = aiSettings.profiles.find(profile => profile.id === selectedProfileId);
+    const profile = { id: selectedProfileId, name: aiProfileName.value, endpoint: aiEndpoint.value, model: aiModel.value, apiKey: aiApiKey.value || current?.apiKey };
+    fetchAiModelsButton.disabled = true;
+    setAiNotice('正在获取模型列表…');
+    try {
+      const result = await appBridge.fetchAiModels(profile);
+      aiModelOptions.innerHTML = result.models.length
+        ? `<option value="">请选择模型（当前：${escapeHtml(aiModel.value || '未选择')}）</option>${result.models.map(model => `<option value="${escapeHtml(model)}">${escapeHtml(model)}</option>`).join('')}`
+        : '<option value="">接口返回了空模型列表</option>';
+      setAiNotice(`已获取 ${result.models.length} 个模型，请从下方列表选择。`, 'success');
+    } catch (error) { setAiNotice(error.message || '获取模型失败，请检查 API 地址和 Key。', 'error'); }
+    finally { fetchAiModelsButton.disabled = false; }
+  });
+  document.getElementById('deleteAiProfile').addEventListener('click', async () => {
+    if (!selectedProfileId) return setAiNotice('当前没有可删除的配置。', 'error');
+    if (!confirm('删除当前 API 配置吗？')) return;
+    const profiles = aiSettings.profiles.filter(profile => profile.id !== selectedProfileId);
+    try {
+      aiSettings = await appBridge.saveAiSettings({ activeProfileId: profiles[0]?.id || '', profiles });
+      selectedProfileId = aiSettings.profiles[0]?.id || '';
+      selectProfile(selectedProfileId);
+      setAiNotice('配置已删除。', 'success');
+    } catch (error) { setAiNotice(error.message || '删除失败。', 'error'); }
+  });
+  workbenchProfile.addEventListener('change', () => { selectedProfileId = workbenchProfile.value; });
+  document.getElementById('closeAiWorkbench').addEventListener('click', () => aiWorkbenchDialog.close());
+  document.getElementById('retryAi').addEventListener('click', () => runAiField(true));
+  document.getElementById('applyAi').addEventListener('click', applyAiPreview);
+  document.getElementById('undoAiApply').addEventListener('click', undoAiApply);
+  document.getElementById('undoAiApplyForm').addEventListener('click', undoAiApply);
+
+  function rememberSelection(element) {
+    if (!element) return;
+    aiSelection = { start: element.selectionStart || 0, end: element.selectionEnd || 0 };
+  }
+
+  document.querySelectorAll('[data-ai-target]').forEach(button => button.addEventListener('click', () => {
+    if (!appBridge.generateField) return setNotice('AI 仅在 macOS App 中可用。', true);
+    aiTarget = document.getElementById(button.dataset.aiTarget);
+    rememberSelection(aiTarget);
+    const selected = aiTarget.value.slice(aiSelection.start, aiSelection.end);
+    document.getElementById('aiWorkbenchMeta').textContent = `${button.parentElement.querySelector('label').textContent} · ${selected ? '将改写选中内容' : '将生成或改写整个字段'}`;
+    aiPreview.value = '';
+    workbenchMode.value = selected ? 'rewrite' : 'generate';
+    workbenchProfile.value = selectedProfileId || aiSettings.activeProfileId || aiSettings.profiles[0]?.id || '';
+    setWorkbenchStatus('结果会先出现在预览区，检查后再应用。');
+    aiWorkbenchDialog.showModal();
+    runAiField(false);
+  }));
+
+  async function runAiField(forceRetry) {
+    if (!aiTarget || !appBridge.generateField) return;
+    const profileId = workbenchProfile.value || selectedProfileId;
+    if (!profileId) return setWorkbenchStatus('请先在 AI 设置中添加 API 配置。', 'error');
+    if (forceRetry) rememberSelection(aiTarget);
+    const source = aiTarget.value.slice(aiSelection.start, aiSelection.end) || aiTarget.value;
+    aiLastRequest = { field: aiTarget.id, profileId, source, mode: workbenchMode.value };
+    setWorkbenchStatus('正在生成…');
+    document.getElementById('applyAi').disabled = true;
+    document.getElementById('retryAi').disabled = true;
+    try {
+      const result = await appBridge.generateField({ profileId, field: aiTarget.id, source, mode: workbenchMode.value, phrase: document.getElementById('phrase').value, context: document.getElementById('prompt').value });
+      aiPreview.value = result.text || '';
+      setWorkbenchStatus(`已生成 · ${result.model || '当前模型'} · 请检查后应用。`, 'success');
+    } catch (error) { setWorkbenchStatus(error.message || '生成失败，请检查设置后重试。', 'error'); }
+    finally { document.getElementById('applyAi').disabled = false; document.getElementById('retryAi').disabled = false; }
+  }
+
+  function applyAiPreview() {
+    if (!aiTarget || !aiPreview.value.trim()) return setWorkbenchStatus('预览区没有可应用的内容。', 'error');
+    const before = aiTarget.value;
+    const start = aiSelection.start < aiSelection.end ? aiSelection.start : 0;
+    const end = aiSelection.start < aiSelection.end ? aiSelection.end : aiTarget.value.length;
+    const next = before.slice(0, start) + aiPreview.value.trim() + before.slice(end);
+    lastAiApply = { element: aiTarget, value: before, selectionStart: start, selectionEnd: end };
+    aiTarget.value = next;
+    aiTarget.focus();
+    const cursor = start + aiPreview.value.trim().length;
+    aiTarget.setSelectionRange(cursor, cursor);
+    document.getElementById('undoAiApply').hidden = false;
+    document.getElementById('undoAiApplyForm').hidden = false;
+    setNotice('AI 结果已应用，请继续检查后保存。');
+    setWorkbenchStatus('已应用到字段。');
+  }
+
+  function undoAiApply() {
+    if (!lastAiApply) return;
+    lastAiApply.element.value = lastAiApply.value;
+    lastAiApply.element.focus();
+    lastAiApply.element.setSelectionRange(lastAiApply.selectionStart, lastAiApply.selectionEnd);
+    lastAiApply = null;
+    document.getElementById('undoAiApply').hidden = true;
+    document.getElementById('undoAiApplyForm').hidden = true;
+    setNotice('已撤销上次 AI 应用。');
+  }
+
+  aiAssistButton.addEventListener('click', () => {
+    const phrase = document.getElementById('phrase').value.trim();
+    if (!phrase) return setNotice('先填写英文短语，再让 AI 生成字段内容。', true);
+    document.querySelector('[data-ai-target="definition"]').click();
+  });
+  loadAiSettings();
 
   function dateKey(date = new Date()) {
     const year = date.getFullYear();
@@ -260,6 +648,15 @@
     localStorage.setItem(storageKey, JSON.stringify(cards));
     render();
   }
+
+  function loadReviewLog() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(reviewLogKey) || '[]');
+      return Array.isArray(saved) ? saved.filter(item => item && typeof item.date === 'string' && typeof item.cardId === 'string') : [];
+    } catch (_) { return []; }
+  }
+
+  function saveReviewLog() { localStorage.setItem(reviewLogKey, JSON.stringify(reviewLog.slice(-2000))); }
 
   function id() {
     return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -333,6 +730,7 @@
   function editCard(cardId) {
     const card = cards.find(item => item.id === cardId);
     if (!card) return;
+    switchView('learn');
     editingId = card.id;
     document.getElementById('phrase').value = card.phrase;
     document.getElementById('prompt').value = card.prompt;
@@ -394,24 +792,44 @@
 
   function renderSummary() {
     document.getElementById('totalCount').textContent = cards.length;
-    document.getElementById('reviewCount').textContent = dueCards().length;
+    const due = dueCards();
+    document.getElementById('reviewCount').textContent = due.length;
     document.getElementById('gCount').textContent = cards.filter(card => card.status === 'G').length;
+    const today = dateKey();
+    const reviewedToday = new Set(reviewLog.filter(item => item.date === today).map(item => item.cardId));
+    const dueTotal = due.length + reviewedToday.size;
+    const completed = dueTotal ? Math.min(reviewedToday.size, dueTotal) : 0;
+    const percent = dueTotal ? Math.round((completed / dueTotal) * 100) : 0;
+    document.getElementById('todayProgressBar').style.transform = `scaleX(${percent / 100})`;
+    document.getElementById('todayProgressValue').textContent = dueTotal ? `${percent}%` : '—';
+    document.getElementById('todayProgressLabel').textContent = dueTotal ? `已评分 ${completed} / ${dueTotal} 张` : '今日无需复习';
+    document.getElementById('streakCount').textContent = calculateStreak();
+  }
+
+  function calculateStreak() {
+    const days = new Set(reviewLog.map(item => item.date));
+    let streak = 0;
+    const cursor = new Date();
+    while (days.has(dateKey(cursor))) { streak += 1; cursor.setDate(cursor.getDate() - 1); }
+    return streak;
   }
 
   function render() { renderSummary(); renderList(); }
 
   function startReview() {
+    switchView('review');
     reviewQueue = dueCards();
     reviewGrades = new Map();
     currentReviewIndex = 0;
-    if (!cards.length) { setNotice('先保存至少一张短语卡，才能开始复习。', true); return; }
-    if (!reviewQueue.length) { setNotice('今天没有到期卡。明天再来复习，或继续添加新卡。'); return; }
+    reviewEmpty.hidden = Boolean(reviewQueue.length);
+    if (!cards.length) { reviewEmpty.hidden = false; setNotice('先保存至少一张短语卡，才能开始复习。', true); return; }
+    if (!reviewQueue.length) { reviewEmpty.hidden = false; setNotice('今天没有到期卡。明天再来复习，或继续添加新卡。'); return; }
     reviewPanel.classList.add('visible');
     showCurrentCard();
     reviewPanel.scrollIntoView({behavior:'smooth', block:'start'});
   }
 
-  function closeReview() { reviewPanel.classList.remove('visible'); currentReviewId = null; }
+  function closeReview() { reviewPanel.classList.remove('visible'); reviewEmpty.hidden = false; currentReviewId = null; switchView('overview'); }
 
   function showCurrentCard() {
     if (!reviewQueue.length) {
@@ -499,6 +917,8 @@
       return {...card, status, stage, dueDate, lapses, reviews:(card.reviews || 0) + 1, updatedAt:new Date().toISOString()};
     });
     reviewGrades.set(cardId, status);
+    reviewLog.push({cardId, date:today, status});
+    saveReviewLog();
     saveCards();
     if (reviewGrades.size === reviewQueue.length) {
       showReviewComplete();
