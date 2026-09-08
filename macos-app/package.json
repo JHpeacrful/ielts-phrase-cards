@@ -1,0 +1,35 @@
+{
+  "name": "ielts-phrase-cards-macos",
+  "version": "0.2.0",
+  "description": "Offline-first IELTS phrase cards with optional OpenAI-compatible AI assistance",
+  "main": "main.js",
+  "author": "JHpeacrful",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --mac dir"
+  },
+  "devDependencies": {
+    "electron": "^38.1.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.jhpeacrful.ieltsphrasecards",
+    "productName": "IELTS Phrase Cards",
+    "files": [
+      "index.html",
+      "main.js",
+      "preload.js"
+    ],
+    "mac": {
+      "target": [
+        "dir"
+      ],
+      "category": "public.app-category.education",
+      "icon": "../icon-assets/ielts-phrase-icon-v2-01.png"
+    }
+  },
+  "allowScripts": {
+    "electron@38.8.6": true
+  }
+}
