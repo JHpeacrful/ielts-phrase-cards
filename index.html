@@ -1147,7 +1147,7 @@
         const incoming = suffix === 'json' ? parseJsonImport(reader.result) : parseDelimitedImport(reader.result);
         if (!Array.isArray(incoming) || !incoming.length) throw new Error('无卡片数据');
         const deckId = chooseImportDeck();
-        if (!deckId) return;
+        if (!deckId) { setNotice('已取消导入。'); return; }
         const existingIds = new Set(cards.map(card => card.id));
         const valid = incoming.map(normaliseImportedCard).filter(card => card.phrase).map(card => normaliseCard({...card, id:!card.id || existingIds.has(card.id) ? id() : card.id, deckIds:[...(Array.isArray(card.deckIds) ? card.deckIds : []), deckId]}));
         if (!valid.length) throw new Error('无有效卡片');
