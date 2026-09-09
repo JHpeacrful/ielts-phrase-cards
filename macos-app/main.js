@@ -147,6 +147,26 @@ function fieldSystemPrompt(field, mode) {
   return `你是 IELTS 英语学习编辑。目标字段是“${label}”，请${style}。${fieldRules[field] || '只返回纯文本，不要 Markdown、引号或解释。'} 保持英式拼写、语言自然、语法准确，不要为了复杂而堆砌生僻词。`;
 }
 
+function validateFieldOutput(field, value) {
+  const content = String(value || '').trim();
+  if (!content) throw new Error('AI 没有返回内容，请重试。');
+  if (field === 'pattern') {
+    if (/(例句|example sentence|for example|e\.g\.)/i.test(content) || /[.!?。！？]/.test(content)) {
+      throw new Error('AI 返回了疑似例句，未应用到固定搭配字段。请点击“再生成”。');
+    }
+  }
+  if (field === 'sentence') {
+    const lines = content.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+    const oral = lines.find(line => /^口语\s*[:：]/.test(line));
+    const written = lines.find(line => /^书面\s*[:：]/.test(line));
+    if (!oral || !written || lines.length !== 2) {
+      throw new Error('AI 返回格式不符合要求，需要恰好一行“口语：”和一行“书面：”。请点击“再生成”。');
+    }
+    return `${oral}\n${written}`;
+  }
+  return content;
+}
+
 app.whenReady().then(() => {
   ipcMain.handle('ai:settings-load', async () => publicSettings(await readSettings()));
   ipcMain.handle('ai:settings-save', async (_, settings) => writeSettings(settings));
@@ -175,11 +195,11 @@ app.whenReady().then(() => {
     const source = String(payload.source || '').trim();
     const phrase = String(payload.phrase || '').trim();
     const context = String(payload.context || '').trim();
-    const content = await callModel(profile, [
+    const rawContent = await callModel(profile, [
       { role: 'system', content: fieldSystemPrompt(field, payload.mode) },
       { role: 'user', content: `短语：${phrase || '（未填写）'}\n个人化提示：${context || '（未填写）'}\n当前内容：${source || '（空白，请直接生成）'}` }
     ]);
-    if (!content) throw new Error('AI 没有返回内容，请重试。');
+    const content = validateFieldOutput(field, rawContent);
     return { text: content, profileId: profile.id, model: profile.model };
   });
   ipcMain.handle('ai:complete-card', async (_, payload = {}) => {
