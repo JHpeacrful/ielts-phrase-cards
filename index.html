@@ -72,6 +72,7 @@
   .quote-panel small { display:block; margin-top:9px; color:var(--muted); }
   .import-actions { display:flex; flex-wrap:wrap; gap:9px; margin-top:12px; }
   .import-dialog { width:min(900px, calc(100vw - 32px)); max-height:min(760px, calc(100vh - 32px)); overflow:auto; }
+  .import-target-dialog { width:min(520px, calc(100vw - 32px)); }
   .import-table-wrap { overflow:auto; margin-top:14px; border:1px solid var(--line); }
   .import-table { width:100%; border-collapse:collapse; min-width:760px; }
   .import-table th, .import-table td { padding:8px; border-bottom:1px solid var(--line); vertical-align:top; text-align:left; }
@@ -371,12 +372,13 @@
       <article class="settings-block"><h3>AI 配置</h3><p class="muted">管理多个 OpenAI 兼容 API，并在字段工作台中切换模型。</p><button class="button" type="button" id="aiSettingsButton">打开 AI 设置</button></article>
       <article class="settings-block"><h3>词库管理</h3><p class="muted">创建、重命名或删除词库；卡片可以同时属于多个词库。</p><div id="deckManager" class="deck-manager"></div><div class="import-actions"><button class="button" type="button" id="newDeckButton">新建词库</button></div></article>
       <article class="settings-block"><h3>每日文案</h3><p class="muted">概览页每天自动生成一句，失败时使用内置文案。</p><select id="quoteStyle"><option value="calm">冷静克制</option><option value="warm">温柔鼓励</option><option value="exam">考试冲刺</option><option value="brief">简短有力</option></select><p id="quoteNotice" class="ai-status" role="status"></p></article>
-      <article class="settings-block"><h3 id="backupHeading">数据备份与导入</h3><p class="muted">导出或导入你的卡片库，密钥不会进入 JSON 文件。</p><div class="backup-actions"><button class="button" type="button" id="exportButton">导出 JSON</button><label class="button">导入 JSON / CSV / TXT<input id="importInput" type="file" accept="application/json,.json,.csv,.txt,text/plain" hidden></label></div><div class="import-actions"><button class="button" type="button" id="pasteImportButton">粘贴文字并用 AI 整理</button></div><small>普通导入前选择词库；AI 整理会先生成可编辑预览，确认后新建独立词库。</small></article>
+      <article class="settings-block"><h3 id="backupHeading">数据备份与导入</h3><p class="muted">导出或导入你的卡片库，密钥不会进入 JSON 文件。</p><div class="backup-actions"><button class="button" type="button" id="exportButton">导出 JSON</button><label class="button">导入 JSON / CSV / TXT<input id="importInput" type="file" accept="application/json,.json,.csv,.txt,text/plain" hidden></label></div><div class="import-actions"><button class="button" type="button" id="pasteImportButton">粘贴文字并用 AI 整理</button></div><small>普通导入前选择已有词库或新建词库；选择已有词库时会替换该词库原有卡片，其他词库不受影响。</small></article>
     </div>
   </section>
 </main>
 
 <dialog id="importDialog" class="ai-dialog import-dialog" aria-labelledby="importHeading"><h2 id="importHeading">AI 整理成词库</h2><p class="note">输入词库名称，粘贴网页文字。AI 会提取可能的短语卡，无法确定的内容会标记为待确认。</p><label class="field">新词库名称<input id="importDeckName" type="text" placeholder="例如：媒体与科技表达"></label><label class="field">待整理文字<textarea id="importSource" rows="8" placeholder="粘贴网页文字、词句或学习笔记"></textarea></label><div class="dialog-actions"><button class="button" type="button" id="cancelImport">取消</button><button class="button primary" type="button" id="runImportAi">生成预览</button></div><div id="importPreviewWrap" class="import-table-wrap" hidden></div><p id="importStatus" class="ai-status" role="status"></p><div class="dialog-actions" id="importConfirmActions" hidden><button class="button primary" type="button" id="confirmImport">确认导入词库</button></div></dialog>
+<dialog id="importTargetDialog" class="ai-dialog import-target-dialog" aria-labelledby="importTargetHeading"><h2 id="importTargetHeading">选择导入词库</h2><p class="note">选择已有词库会替换该词库中的卡片；新建词库不会影响其他词库。</p><label class="field">导入到已有词库<select id="importTargetSelect"></select></label><label class="field">或输入新词库名称<input id="importTargetName" type="text" placeholder="例如：媒体与科技表达"></label><p id="importTargetStatus" class="ai-status" role="status"></p><div class="dialog-actions"><button class="button" type="button" id="cancelImportTarget">取消</button><button class="button primary" type="button" id="confirmImportTarget">继续导入</button></div></dialog>
 <script>
 (() => {
   const storageKey = 'ielts_phrase_cards_v1';
@@ -416,6 +418,10 @@
   const quoteStyle = document.getElementById('quoteStyle');
   const quoteNotice = document.getElementById('quoteNotice');
   const importDialog = document.getElementById('importDialog');
+  const importTargetDialog = document.getElementById('importTargetDialog');
+  const importTargetSelect = document.getElementById('importTargetSelect');
+  const importTargetName = document.getElementById('importTargetName');
+  const importTargetStatus = document.getElementById('importTargetStatus');
   const importDeckName = document.getElementById('importDeckName');
   const importSource = document.getElementById('importSource');
   const importPreviewWrap = document.getElementById('importPreviewWrap');
@@ -882,6 +888,7 @@
   document.getElementById('closeReview').addEventListener('click', closeReview);
   document.getElementById('exportButton').addEventListener('click', exportCards);
   document.getElementById('importInput').addEventListener('change', importCards);
+  document.getElementById('cancelImportTarget').addEventListener('click', () => importTargetDialog.close());
 
   function resetForm() {
     form.reset();
@@ -1141,19 +1148,24 @@
     const file = input.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       try {
         const suffix = (file.name.split('.').pop() || '').toLowerCase();
         const incoming = suffix === 'json' ? parseJsonImport(reader.result) : parseDelimitedImport(reader.result);
         if (!Array.isArray(incoming) || !incoming.length) throw new Error('无卡片数据');
-        const deckId = chooseImportDeck();
-        if (!deckId) { setNotice('已取消导入。'); return; }
+        const target = await chooseImportDeck();
+        if (!target) { setNotice('已取消导入。'); return; }
+        const {deckId, replace} = target;
         const existingIds = new Set(cards.map(card => card.id));
         const valid = incoming.map(normaliseImportedCard).filter(card => card.phrase).map(card => normaliseCard({...card, id:!card.id || existingIds.has(card.id) ? id() : card.id, deckIds:[...(Array.isArray(card.deckIds) ? card.deckIds : []), deckId]}));
         if (!valid.length) throw new Error('无有效卡片');
-        cards = [...valid, ...cards].sort((a,b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
+        const retained = replace ? cards.flatMap(card => {
+          const deckIds = (card.deckIds || ['default']).filter(id => id !== deckId);
+          return deckIds.length ? [{...card, deckIds}] : [];
+        }) : cards;
+        cards = [...valid, ...retained].sort((a,b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
         saveCards();
-        setNotice(`已导入 ${valid.length} 张卡片。`);
+        setNotice(`${replace ? '已替换' : '已导入'}词库“${deckName(deckId)}”，共 ${valid.length} 张卡片。`);
       } catch (error) { setNotice(`导入失败：${error?.message || '请选择有效的 JSON、CSV 或 TXT 文件。'}`, true); }
       finally { input.value = ''; }
     };
@@ -1199,14 +1211,28 @@
   }
 
   function chooseImportDeck() {
-    const names = decks.map(deck => deck.name).join('、');
-    const name = window.prompt(`请输入导入目标词库名称（已有词库：${names}）。不存在时会自动新建：`)?.trim();
-    if (!name) return '';
-    const existing = decks.find(deck => deck.name.toLowerCase() === name.toLowerCase());
-    if (existing) return existing.id;
-    const newDeck = {id:`deck-${Date.now()}-${Math.random().toString(16).slice(2)}`, name};
-    decks.push(newDeck); saveDecks(); renderDeckControls();
-    return newDeck.id;
+    importTargetSelect.innerHTML = decks.map(deck => `<option value="${escapeHtml(deck.id)}">${escapeHtml(deck.name)}</option>`).join('');
+    importTargetSelect.value = decks[0]?.id || 'default';
+    importTargetName.value = '';
+    importTargetStatus.textContent = '';
+    importTargetStatus.className = 'ai-status';
+    importTargetDialog.showModal();
+    return new Promise(resolve => {
+      const finish = result => { importTargetDialog.close(); resolve(result); };
+      const confirm = () => {
+        const name = importTargetName.value.trim();
+        if (!name) return finish({deckId:importTargetSelect.value, replace:true});
+        const existing = decks.find(deck => deck.name.toLowerCase() === name.toLowerCase());
+        if (existing) return finish({deckId:existing.id, replace:true});
+        const newDeck = {id:`deck-${Date.now()}-${Math.random().toString(16).slice(2)}`, name};
+        decks.push(newDeck); saveDecks(); renderDeckControls();
+        finish({deckId:newDeck.id, replace:false});
+      };
+      const cancel = () => finish(null);
+      document.getElementById('confirmImportTarget').onclick = confirm;
+      document.getElementById('cancelImportTarget').onclick = cancel;
+      importTargetDialog.addEventListener('close', () => resolve(null), {once:true});
+    });
   }
 
   async function runImportAi() {
