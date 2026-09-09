@@ -1155,7 +1155,7 @@
         saveCards();
         setNotice(`已导入 ${valid.length} 张卡片。`);
       } catch (error) { setNotice(`导入失败：${error?.message || '请选择有效的 JSON、CSV 或 TXT 文件。'}`, true); }
-      input.value = '';
+      finally { input.value = ''; }
     };
     reader.onerror = () => { input.value = ''; setNotice('导入失败：文件读取失败，请重试。', true); };
     reader.readAsText(file, 'utf-8');
