@@ -202,6 +202,30 @@ app.whenReady().then(() => {
     const content = validateFieldOutput(field, rawContent);
     return { text: content, profileId: profile.id, model: profile.model };
   });
+  ipcMain.handle('ai:import-text', async (_, payload = {}) => {
+    const settings = await readSettings();
+    const profile = settings.profiles.find(item => item.id === payload.profileId) || settings.profiles.find(item => item.id === settings.activeProfileId) || settings.profiles[0];
+    const source = String(payload.source || '').trim();
+    if (!source) throw new Error('请先粘贴需要整理的文字。');
+    const content = await callModel(profile, [
+      { role: 'system', content: '你是 IELTS 词库整理编辑。请从用户粘贴的混合文本中提取可能的英文短语卡，并自动补全缺失字段。只返回 JSON 数组，不要 Markdown。每个对象必须只有 phrase、prompt、definition、pattern、sentence、confidence、status 七个键，全部是字符串。phrase 是英文短语；prompt 是简短话题提示；definition 是简洁英文释义；pattern 只能是固定搭配或语法框架，禁止例句；sentence 只保留最终推荐的一句原创例句，通常优先口语，纯正式书面短语才用书面句，要求 IELTS 7-8 分段；confidence 只能是 high、medium 或 low；无法确认的行必须 status 为 pending，否则 status 为 ready。没有可靠英文短语的内容不要硬编。' },
+      { role: 'user', content: source.slice(0, 24000) }
+    ], { maxTokens: 3000, temperature: 0.2 });
+    let rows;
+    try { rows = JSON.parse(content.replace(/^```json\s*|```$/g, '').trim()); } catch (_) { throw new Error('AI 返回的词库格式无法识别，请重试。'); }
+    if (!Array.isArray(rows)) throw new Error('AI 没有返回可识别的词库列表。');
+    return { rows: rows.slice(0, 120).map(row => ({ phrase:String(row?.phrase || '').trim(), prompt:String(row?.prompt || '').trim(), definition:String(row?.definition || '').trim(), pattern:String(row?.pattern || '').trim(), sentence:String(row?.sentence || '').trim(), confidence:['high','medium','low'].includes(row?.confidence) ? row.confidence : 'medium', status:row?.status === 'pending' ? 'pending' : 'ready' })).filter(row => row.phrase) };
+  });
+  ipcMain.handle('ai:quote', async (_, payload = {}) => {
+    const settings = await readSettings();
+    const profile = settings.profiles.find(item => item.id === payload.profileId) || settings.profiles.find(item => item.id === settings.activeProfileId) || settings.profiles[0];
+    const style = {calm:'冷静克制、具体、不煽情', warm:'温柔鼓励、真诚、不空泛', exam:'考试冲刺、聚焦准确输出和稳定发挥', brief:'简短有力、最多二十个汉字'}[payload.style] || '冷静克制';
+    const text = await callModel(profile, [
+      { role: 'system', content: `你是 IELTS 学习教练。请写一句中文学习提醒，风格为“${style}”。只返回一句话，不要引号、编号、换行、解释或标签。不要使用夸张鸡汤。` },
+      { role: 'user', content: `日期：${String(payload.date || '')}` }
+    ], {maxTokens:80, temperature:0.7});
+    return {text:text.replace(/[\r\n]+/g, ' ').trim()};
+  });
   ipcMain.handle('ai:complete-card', async (_, payload = {}) => {
     const settings = await readSettings();
     const profile = payload.profile?.endpoint ? cleanProfile(payload.profile) : settings.profiles.find(item => item.id === payload.profileId) || settings.profiles[0];

@@ -53,8 +53,30 @@
   .settings-block .button { margin-top:8px; }
   .settings-block small { display:block; margin-top:11px; color:var(--muted); line-height:1.5; }
   .review.view { margin-top:0; }
-  .review:not(.visible) .card-face, .review:not(.visible) .review-actions { display:none; }
+  .review:not(.visible) .card-face, .review:not(.visible) .review-actions, .review:not(.visible) .review-card-tools { display:none; }
   .review-empty { padding:30px 0 12px; color:var(--muted); }
+  .sub-tabs { display:flex; gap:5px; margin:0 0 18px; border-bottom:1px solid var(--line); }
+  .sub-tab { padding:9px 14px; color:var(--muted); background:transparent; border:0; border-bottom:2px solid transparent; font-weight:bold; }
+  .sub-tab.active { color:var(--accent-strong); border-bottom-color:var(--accent-strong); }
+  .deck-picker { display:flex; flex-wrap:wrap; gap:8px; margin-top:9px; }
+  .deck-choice { display:inline-flex; align-items:center; gap:7px; padding:8px 10px; color:var(--muted); background:var(--panel-soft); border:1px solid var(--line); border-radius:4px; }
+  .deck-choice input { margin:0; accent-color:var(--accent); }
+  .deck-manager { display:grid; gap:8px; margin-top:12px; }
+  .deck-manager-row { display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:7px; align-items:center; }
+  .deck-manager-row input { margin-top:0; }
+  .star-button { min-width:42px; padding:8px 12px; color:var(--muted); background:transparent; border:1px solid var(--line); border-radius:5px; font-size:22px; line-height:1; }
+  .star-button.active { color:#d89a37; border-color:#d89a37; background:var(--pill-y); }
+  .review-card-tools { display:flex; justify-content:flex-end; gap:9px; margin-top:-8px; }
+  .quote-panel { margin-top:18px; padding:20px; background:var(--panel-soft); box-shadow:inset 3px 0 var(--accent); }
+  .quote-panel p { margin:0; font-size:19px; }
+  .quote-panel small { display:block; margin-top:9px; color:var(--muted); }
+  .import-actions { display:flex; flex-wrap:wrap; gap:9px; margin-top:12px; }
+  .import-dialog { width:min(900px, calc(100vw - 32px)); max-height:min(760px, calc(100vh - 32px)); overflow:auto; }
+  .import-table-wrap { overflow:auto; margin-top:14px; border:1px solid var(--line); }
+  .import-table { width:100%; border-collapse:collapse; min-width:760px; }
+  .import-table th, .import-table td { padding:8px; border-bottom:1px solid var(--line); vertical-align:top; text-align:left; }
+  .import-table th { color:var(--muted); font-size:13px; }
+  .import-table input, .import-table textarea, .import-table select { margin-top:0; min-width:130px; }
   header { display:flex; justify-content:space-between; gap:32px; align-items:flex-start; padding-bottom:25px; border-bottom:1px solid var(--ink); }
   header > div:first-child { flex:1 1 auto; }
   .muted { color:var(--muted); line-height:1.5; }
@@ -97,6 +119,8 @@
   .review { display:none; margin-top:36px; padding:23px; border:1px solid var(--line); border-radius:7px; background:var(--panel); box-shadow:0 4px 18px rgba(29,39,40,.08); }
   .review.visible { display:block; }
   .review-top { display:flex; justify-content:space-between; gap:16px; align-items:center; }
+  .review-top-actions { display:flex; align-items:end; gap:10px; }
+  .review-top-actions .field { min-width:190px; margin:0; }
   .review-top h2 { margin-bottom:5px; }
   .card-face { min-height:230px; margin:20px 0; padding:27px; border:1px solid var(--line); border-radius:5px; background:var(--paper); display:flex; flex-direction:column; justify-content:center; }
   .card-face .side { color:var(--muted); font-size:14px; margin-bottom:10px; }
@@ -169,11 +193,14 @@
     .field.full { grid-column:auto; }
     .review { padding:17px; }
     .review-top { align-items:flex-start; }
+    .review-top-actions { width:100%; flex-direction:column; align-items:stretch; }
+    .review-top-actions .field { min-width:0; }
     .card-face { min-height:210px; padding:21px; }
     .card-face .phrase { font-size:27px; }
     .list-head { margin-top:36px; }
     .workbench-grid { grid-template-columns:1fr; }
     .overview-grid, .settings-grid { grid-template-columns:1fr; }
+    .deck-manager-row { grid-template-columns:1fr auto auto; }
     .ai-workbench { top:auto; right:0; bottom:0; width:100%; max-width:none; border-radius:10px 10px 0 0; }
   }
   @media (prefers-reduced-motion:reduce) {
@@ -225,6 +252,7 @@
         <span id="streakCount" class="streak-value">0</span><span class="streak-label">天连续有评分记录</span>
       </article>
     </div>
+    <article class="quote-panel"><p id="dailyQuote">今天也只要向前一点点。</p><small id="dailyQuoteMeta">每日一句 · 可在设置中选择文案风格</small></article>
   </section>
 
   <dialog id="aiSettingsDialog" class="ai-dialog" aria-labelledby="aiSettingsHeading">
@@ -291,6 +319,7 @@
           <label class="choice"><input type="radio" name="status" value="Y" checked> Y 需要提示</label>
           <label class="choice"><input type="radio" name="status" value="R"> R 两次想不出/用错</label>
         </div></fieldset>
+        <fieldset class="field full"><legend>所属词库</legend><div id="learnDeckPicker" class="deck-picker"></div></fieldset>
       </div>
       <div class="toolbar">
         <button class="button primary" type="submit" id="saveButton">保存短语卡</button>
@@ -303,9 +332,10 @@
   </section>
 
   <section class="view review" id="reviewPanel" data-view-panel="review" aria-live="polite">
-    <div class="review-top"><div><p class="overview-kicker">复习</p><h2>复习模式</h2><div class="muted" id="reviewMeta"></div></div><button class="button" type="button" id="closeReview">返回概览</button></div>
+    <div class="review-top"><div><p class="overview-kicker">复习</p><h2>复习模式</h2><div class="muted" id="reviewMeta"></div></div><div class="review-top-actions"><label class="field">选择词库<select id="reviewDeckSelect"></select></label><label class="field">复习范围<select id="reviewScopeSelect"><option value="all">全部卡片</option><option value="favorites">仅收藏夹</option></select></label><button class="button" type="button" id="closeReview">返回概览</button></div></div>
     <div class="review-empty" id="reviewEmpty"><p>只显示今天到期的卡片，并沿用 R / Y / G 评分算法。</p><button class="button primary" type="button" id="startReview">开始今日复习</button></div>
     <div class="card-face" id="cardFace"></div>
+    <div class="review-card-tools"><button class="star-button" type="button" id="reviewFavorite" aria-label="收藏当前卡片" title="收藏当前卡片">☆</button></div>
     <div class="review-actions" id="reviewActions"></div>
   </section>
 
@@ -313,6 +343,7 @@
     <p class="overview-kicker">历史</p>
     <h2 id="libraryHeading">卡片库历史</h2>
     <p class="view-intro">搜索、筛选、编辑和管理全部短语卡。复习评分会直接更新这里的状态与下次到期日。</p>
+    <div class="sub-tabs" role="tablist" aria-label="历史子页面"><button class="sub-tab active" type="button" data-history-tab="all">全部卡片</button><button class="sub-tab" type="button" data-history-tab="favorites">收藏夹</button></div>
     <div class="toolbar">
       <label class="field">搜索
         <input id="search" type="text" placeholder="短语、提示、搭配或句子">
@@ -322,6 +353,9 @@
       </label>
       <label class="field">状态
         <select id="statusFilter"><option value="all">全部状态</option><option value="G">G 已掌握</option><option value="Y">Y 需提示</option><option value="R">R 优先复习</option></select>
+      </label>
+      <label class="field">词库
+        <select id="historyDeckFilter"><option value="all">全部词库</option></select>
       </label>
     </div>
     <div class="list-head"><h3>我的卡片</h3><span class="muted" id="shownCount"></span></div>
@@ -335,10 +369,14 @@
     <div class="settings-grid">
       <article class="settings-block"><h3>外观</h3><p class="muted">调整页面颜色，偏好会保存在本机。</p><button class="button theme-toggle" type="button" id="themeToggle" aria-pressed="false" title="切换页面颜色">深色模式</button></article>
       <article class="settings-block"><h3>AI 配置</h3><p class="muted">管理多个 OpenAI 兼容 API，并在字段工作台中切换模型。</p><button class="button" type="button" id="aiSettingsButton">打开 AI 设置</button></article>
-      <article class="settings-block"><h3 id="backupHeading">数据备份</h3><p class="muted">导出或导入你的卡片库，密钥不会进入 JSON 文件。</p><div class="backup-actions"><button class="button" type="button" id="exportButton">导出 JSON</button><label class="button">导入 JSON<input id="importInput" type="file" accept="application/json,.json" hidden></label></div><small>导入会与现有卡片合并，重复短语可手动编辑或删除。</small></article>
+      <article class="settings-block"><h3>词库管理</h3><p class="muted">创建、重命名或删除词库；卡片可以同时属于多个词库。</p><div id="deckManager" class="deck-manager"></div><div class="import-actions"><button class="button" type="button" id="newDeckButton">新建词库</button></div></article>
+      <article class="settings-block"><h3>每日文案</h3><p class="muted">概览页每天自动生成一句，失败时使用内置文案。</p><select id="quoteStyle"><option value="calm">冷静克制</option><option value="warm">温柔鼓励</option><option value="exam">考试冲刺</option><option value="brief">简短有力</option></select><p id="quoteNotice" class="ai-status" role="status"></p></article>
+      <article class="settings-block"><h3 id="backupHeading">数据备份与导入</h3><p class="muted">导出或导入你的卡片库，密钥不会进入 JSON 文件。</p><div class="backup-actions"><button class="button" type="button" id="exportButton">导出 JSON</button><label class="button">导入 JSON / CSV / TXT<input id="importInput" type="file" accept="application/json,.json,.csv,.txt,text/plain" hidden></label></div><div class="import-actions"><button class="button" type="button" id="pasteImportButton">粘贴文字并用 AI 整理</button></div><small>普通导入前选择词库；AI 整理会先生成可编辑预览，确认后新建独立词库。</small></article>
     </div>
   </section>
 </main>
+
+<dialog id="importDialog" class="ai-dialog import-dialog" aria-labelledby="importHeading"><h2 id="importHeading">AI 整理成词库</h2><p class="note">输入词库名称，粘贴网页文字。AI 会提取可能的短语卡，无法确定的内容会标记为待确认。</p><label class="field">新词库名称<input id="importDeckName" type="text" placeholder="例如：媒体与科技表达"></label><label class="field">待整理文字<textarea id="importSource" rows="8" placeholder="粘贴网页文字、词句或学习笔记"></textarea></label><div class="dialog-actions"><button class="button" type="button" id="cancelImport">取消</button><button class="button primary" type="button" id="runImportAi">生成预览</button></div><div id="importPreviewWrap" class="import-table-wrap" hidden></div><p id="importStatus" class="ai-status" role="status"></p><div class="dialog-actions" id="importConfirmActions" hidden><button class="button primary" type="button" id="confirmImport">确认导入词库</button></div></dialog>
 <script>
 (() => {
   const storageKey = 'ielts_phrase_cards_v1';
@@ -368,8 +406,33 @@
   const reviewPanel = document.getElementById('reviewPanel');
   const cardFace = document.getElementById('cardFace');
   const reviewActions = document.getElementById('reviewActions');
+  const reviewDeckSelect = document.getElementById('reviewDeckSelect');
+  const reviewScopeSelect = document.getElementById('reviewScopeSelect');
+  const reviewFavorite = document.getElementById('reviewFavorite');
+  const learnDeckPicker = document.getElementById('learnDeckPicker');
+  const historyDeckFilter = document.getElementById('historyDeckFilter');
+  const dailyQuote = document.getElementById('dailyQuote');
+  const dailyQuoteMeta = document.getElementById('dailyQuoteMeta');
+  const quoteStyle = document.getElementById('quoteStyle');
+  const quoteNotice = document.getElementById('quoteNotice');
+  const importDialog = document.getElementById('importDialog');
+  const importDeckName = document.getElementById('importDeckName');
+  const importSource = document.getElementById('importSource');
+  const importPreviewWrap = document.getElementById('importPreviewWrap');
+  const importStatus = document.getElementById('importStatus');
+  const importConfirmActions = document.getElementById('importConfirmActions');
   const intervals = [1, 3, 7, 14, 30, 60];
+  const decksStorageKey = 'ielts_phrase_decks_v1';
+  const quoteStorageKey = 'ielts_phrase_quotes_v1';
+  const quoteFallbacks = {
+    calm: ['稳定地复习，比偶尔冲刺更可靠。', '今天只解决眼前这一张卡。'],
+    warm: ['你已经比昨天多掌握了一点。', '慢慢来，能坚持的节奏就是好节奏。'],
+    exam: ['把准确表达练成考试中的本能。', '今天的复习，就是考场上的从容。'],
+    brief: ['少一点犹豫，多一次调用。', '今天，完成它。']
+  };
   let cards = loadCards();
+  let decks = loadDecks();
+  let quoteSettings = loadQuoteSettings();
   let reviewLog = loadReviewLog();
   let editingId = null;
   let reviewQueue = [];
@@ -383,6 +446,10 @@
   let aiSelection = { start: 0, end: 0 };
   let aiLastRequest = null;
   let lastAiApply = null;
+  let historyTab = 'all';
+  let selectedReviewDeck = localStorage.getItem('ielts_phrase_review_deck_v1') || 'default';
+  let selectedReviewScope = localStorage.getItem('ielts_phrase_review_scope_v1') || 'all';
+  let importRows = [];
 
   const viewNames = {overview:'概览', learn:'学习', review:'复习', history:'历史', settings:'设置'};
   function switchView(view, updateHash = true) {
@@ -467,6 +534,7 @@
     aiSettings = await appBridge.loadAiSettings();
     selectedProfileId = aiSettings.activeProfileId || aiSettings.profiles[0]?.id || '';
     selectProfile(selectedProfileId);
+    maybeGenerateQuote();
   }
 
   aiSettingsButton.addEventListener('click', async () => {
@@ -634,7 +702,53 @@
 
   function normaliseCard(card) {
     const stage = Number.isInteger(card.stage) ? Math.max(0, Math.min(card.stage, intervals.length)) : 0;
-    return {...card, stage, dueDate:/^\d{4}-\d{2}-\d{2}$/.test(card.dueDate || '') ? card.dueDate : dateKey(), reviews:Number.isInteger(card.reviews) ? card.reviews : 0, lapses:Number.isInteger(card.lapses) ? card.lapses : 0};
+    const deckIds = Array.isArray(card.deckIds) ? card.deckIds.filter(Boolean).map(String) : ['default'];
+    return {...card, deckIds: deckIds.length ? [...new Set(deckIds)] : ['default'], favorite: Boolean(card.favorite || card.isFavorite), stage, dueDate:/^\d{4}-\d{2}-\d{2}$/.test(card.dueDate || '') ? card.dueDate : dateKey(), reviews:Number.isInteger(card.reviews) ? card.reviews : 0, lapses:Number.isInteger(card.lapses) ? card.lapses : 0};
+  }
+
+  function loadDecks() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(decksStorageKey) || '[]');
+      const list = Array.isArray(saved) ? saved.filter(deck => deck && typeof deck.id === 'string' && typeof deck.name === 'string').map(deck => ({id:deck.id, name:deck.name.trim()})).filter(deck => deck.name) : [];
+      return list.some(deck => deck.id === 'default') ? list : [{id:'default', name:'默认词库'}, ...list];
+    } catch (_) { return [{id:'default', name:'默认词库'}]; }
+  }
+
+  function saveDecks() { localStorage.setItem(decksStorageKey, JSON.stringify(decks)); }
+
+  function loadQuoteSettings() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(quoteStorageKey) || '{}');
+      return {style:['calm','warm','exam','brief'].includes(saved.style) ? saved.style : 'calm', generated:saved.generated && typeof saved.generated === 'object' ? saved.generated : {}};
+    } catch (_) { return {style:'calm', generated:{}}; }
+  }
+
+  function saveQuoteSettings() { localStorage.setItem(quoteStorageKey, JSON.stringify(quoteSettings)); }
+
+  function fallbackQuote(style) {
+    const pool = quoteFallbacks[style] || quoteFallbacks.calm;
+    return pool[new Date().getDate() % pool.length];
+  }
+
+  async function maybeGenerateQuote(force = false) {
+    const today = dateKey();
+    if (!force && quoteSettings.generated[today]) {
+      dailyQuote.textContent = quoteSettings.generated[today];
+      dailyQuoteMeta.textContent = `每日一句 · ${viewNames.settings ? '文案风格：' + ({calm:'冷静克制',warm:'温柔鼓励',exam:'考试冲刺',brief:'简短有力'}[quoteSettings.style]) : ''}`;
+      return;
+    }
+    dailyQuote.textContent = fallbackQuote(quoteSettings.style);
+    dailyQuoteMeta.textContent = '每日一句 · 内置文案';
+    if (!appBridge.generateQuote) return;
+    const profileId = aiSettings.activeProfileId || aiSettings.profiles[0]?.id;
+    if (!profileId) return;
+    try {
+      const result = await appBridge.generateQuote({profileId, style:quoteSettings.style, date:today});
+      if (result?.text) { quoteSettings.generated[today] = result.text.trim(); saveQuoteSettings(); dailyQuote.textContent = result.text.trim(); dailyQuoteMeta.textContent = '每日一句 · AI 生成'; }
+      if (quoteNotice) quoteNotice.textContent = '';
+    } catch (error) {
+      if (quoteNotice) { quoteNotice.textContent = `今日 AI 文案生成失败，已使用内置文案：${error.message || '未知错误'}`; quoteNotice.className = 'ai-status error'; }
+    }
   }
 
   function loadCards() {
@@ -677,6 +791,39 @@
 
   function clean(value) { return value.trim(); }
 
+  function deckName(deckId) { return decks.find(deck => deck.id === deckId)?.name || '未知词库'; }
+
+  function renderDeckControls() {
+    const selectedLearnDecks = [...learnDeckPicker.querySelectorAll('input[name="deckId"]:checked')].map(input => input.value);
+    const options = decks.map(deck => `<option value="${escapeHtml(deck.id)}">${escapeHtml(deck.name)}</option>`).join('');
+    reviewDeckSelect.innerHTML = options;
+    if (!decks.some(deck => deck.id === selectedReviewDeck)) selectedReviewDeck = decks[0]?.id || 'default';
+    reviewDeckSelect.value = selectedReviewDeck;
+    reviewScopeSelect.value = selectedReviewScope;
+    historyDeckFilter.innerHTML = `<option value="all">全部词库</option>${options}`;
+    learnDeckPicker.innerHTML = decks.map(deck => `<label class="deck-choice"><input type="checkbox" name="deckId" value="${escapeHtml(deck.id)}">${escapeHtml(deck.name)}</label>`).join('');
+    learnDeckPicker.querySelectorAll('input[name="deckId"]').forEach(input => { input.checked = selectedLearnDecks.length ? selectedLearnDecks.includes(input.value) : input.value === 'default'; });
+    document.getElementById('deckManager').innerHTML = decks.map(deck => `<div class="deck-manager-row"><input type="text" value="${escapeHtml(deck.name)}" data-deck-name="${escapeHtml(deck.id)}" aria-label="词库名称"><button class="button" type="button" data-rename-deck="${escapeHtml(deck.id)}">保存</button>${deck.id === 'default' ? '' : `<button class="button danger" type="button" data-delete-deck="${escapeHtml(deck.id)}">删除</button>`}</div>`).join('');
+    document.querySelectorAll('[data-rename-deck]').forEach(button => button.addEventListener('click', () => renameDeck(button.dataset.renameDeck)));
+    document.querySelectorAll('[data-delete-deck]').forEach(button => button.addEventListener('click', () => deleteDeck(button.dataset.deleteDeck)));
+  }
+
+  function renameDeck(deckId) {
+    const input = document.querySelector(`[data-deck-name="${deckId}"]`);
+    const name = input?.value.trim();
+    if (!name) return setNotice('词库名称不能为空。', true);
+    decks = decks.map(deck => deck.id === deckId ? {...deck, name} : deck);
+    saveDecks(); renderDeckControls(); renderList(); setNotice('词库名称已更新。');
+  }
+
+  function deleteDeck(deckId) {
+    const deck = decks.find(item => item.id === deckId);
+    if (!deck || !confirm(`删除词库“${deck.name}”吗？卡片不会被删除，只会移出该词库。`)) return;
+    decks = decks.filter(item => item.id !== deckId);
+    cards = cards.map(card => ({...card, deckIds:(card.deckIds || ['default']).filter(id => id !== deckId).length ? (card.deckIds || ['default']).filter(id => id !== deckId) : ['default']}));
+    saveDecks(); saveCards(); renderDeckControls(); setNotice('词库已删除，卡片已保留。');
+  }
+
   function cardFromForm() {
     return {
       id: editingId || id(),
@@ -685,6 +832,8 @@
       definition: clean(document.getElementById('definition').value),
       pattern: clean(document.getElementById('pattern').value),
       sentence: clean(document.getElementById('sentence').value),
+      deckIds: [...learnDeckPicker.querySelectorAll('input[name="deckId"]:checked')].map(input => input.value),
+      favorite: editingId ? Boolean(cards.find(card => card.id === editingId)?.favorite) : false,
       tag: getRadio('tag'),
       status: getRadio('status'),
       createdAt: editingId ? cards.find(card => card.id === editingId).createdAt : new Date().toISOString(),
@@ -699,11 +848,11 @@
   form.addEventListener('submit', event => {
     event.preventDefault();
     const card = cardFromForm();
-    if (!card.phrase || !card.prompt || !card.definition || !card.pattern || !card.sentence) {
+    if (!card.phrase || !card.prompt || !card.definition || !card.pattern || !card.sentence || !card.deckIds.length) {
       setNotice('请完成全部字段后再保存。', true);
       return;
     }
-    const duplicate = cards.find(item => item.phrase.toLowerCase() === card.phrase.toLowerCase() && item.id !== card.id);
+    const duplicate = cards.find(item => item.phrase.toLowerCase() === card.phrase.toLowerCase() && item.id !== card.id && (item.deckIds || ['default']).some(deckId => card.deckIds.includes(deckId)));
     if (duplicate && !confirm('已有同名短语卡。仍要保存为另一张卡吗？')) return;
     if (editingId) cards = cards.map(item => item.id === editingId ? card : item);
     else cards.unshift(card);
@@ -717,6 +866,18 @@
   document.getElementById('search').addEventListener('input', renderList);
   document.getElementById('tagFilter').addEventListener('change', renderList);
   document.getElementById('statusFilter').addEventListener('change', renderList);
+  historyDeckFilter.addEventListener('change', renderList);
+  quoteStyle.value = quoteSettings.style;
+  quoteStyle.addEventListener('change', () => { quoteSettings.style = quoteStyle.value; saveQuoteSettings(); maybeGenerateQuote(true); });
+  document.getElementById('pasteImportButton').addEventListener('click', () => { importSource.value = ''; importPreviewWrap.hidden = true; importConfirmActions.hidden = true; importStatus.textContent = ''; importDeckName.value = ''; importDialog.showModal(); });
+  document.getElementById('cancelImport').addEventListener('click', () => importDialog.close());
+  document.getElementById('runImportAi').addEventListener('click', runImportAi);
+  document.getElementById('confirmImport').addEventListener('click', confirmImport);
+  document.querySelectorAll('[data-history-tab]').forEach(tab => tab.addEventListener('click', () => { historyTab = tab.dataset.historyTab; historyDeckFilter.disabled = historyTab === 'favorites'; if (historyTab === 'favorites') historyDeckFilter.value = 'all'; document.querySelectorAll('[data-history-tab]').forEach(item => item.classList.toggle('active', item === tab)); renderList(); }));
+  reviewDeckSelect.addEventListener('change', () => { selectedReviewDeck = reviewDeckSelect.value; localStorage.setItem('ielts_phrase_review_deck_v1', selectedReviewDeck); reviewPanel.classList.remove('visible'); reviewEmpty.hidden = false; });
+  reviewScopeSelect.addEventListener('change', () => { selectedReviewScope = reviewScopeSelect.value; localStorage.setItem('ielts_phrase_review_scope_v1', selectedReviewScope); reviewPanel.classList.remove('visible'); reviewEmpty.hidden = false; });
+  reviewFavorite.addEventListener('click', () => { if (currentReviewId) toggleFavorite(currentReviewId); });
+  document.getElementById('newDeckButton').addEventListener('click', () => createDeck());
   document.getElementById('startReview').addEventListener('click', startReview);
   document.getElementById('closeReview').addEventListener('click', closeReview);
   document.getElementById('exportButton').addEventListener('click', exportCards);
@@ -726,6 +887,7 @@
     form.reset();
     form.querySelector('input[name="tag"][value="WS"]').checked = true;
     form.querySelector('input[name="status"][value="Y"]').checked = true;
+    learnDeckPicker.querySelectorAll('input[name="deckId"]').forEach(input => { input.checked = input.value === 'default'; });
     editingId = null;
     document.getElementById('saveButton').textContent = '保存短语卡';
     document.getElementById('cancelEdit').hidden = true;
@@ -743,6 +905,7 @@
     document.getElementById('sentence').value = card.sentence || '';
     form.querySelector(`input[name="tag"][value="${card.tag}"]`).checked = true;
     form.querySelector(`input[name="status"][value="${card.status}"]`).checked = true;
+    learnDeckPicker.querySelectorAll('input[name="deckId"]').forEach(input => { input.checked = (card.deckIds || ['default']).includes(input.value); });
     document.getElementById('saveButton').textContent = '更新短语卡';
     document.getElementById('cancelEdit').hidden = false;
     form.scrollIntoView({behavior:'smooth', block:'start'});
@@ -762,9 +925,11 @@
     const query = document.getElementById('search').value.trim().toLowerCase();
     const tag = document.getElementById('tagFilter').value;
     const status = document.getElementById('statusFilter').value;
+    const deck = historyDeckFilter.value;
     return cards.filter(card => {
       const haystack = [card.phrase, card.prompt, card.definition, card.pattern, card.sentence].join(' ').toLowerCase();
-      return (!query || haystack.includes(query)) && (tag === 'all' || card.tag === tag) && (status === 'all' || card.status === status);
+      const inDeck = historyTab === 'favorites' || deck === 'all' || (card.deckIds || ['default']).includes(deck);
+      return (historyTab !== 'favorites' || card.favorite) && inDeck && (!query || haystack.includes(query)) && (tag === 'all' || card.tag === tag) && (status === 'all' || card.status === status);
     });
   }
 
@@ -775,21 +940,22 @@
     return `${date.getMonth() + 1}/${date.getDate()}`;
   }
   function isDue(card) { return card.dueDate <= dateKey(); }
-  function dueCards() {
+  function dueCards(deckId = 'all', scope = 'all') {
     const priority = {R:0, Y:1, G:2};
-    return cards.filter(isDue).sort((a, b) => priority[a.status] - priority[b.status] || a.dueDate.localeCompare(b.dueDate) || a.phrase.localeCompare(b.phrase));
+    return cards.filter(card => isDue(card) && (deckId === 'all' || (card.deckIds || ['default']).includes(deckId)) && (scope !== 'favorites' || card.favorite)).sort((a, b) => priority[a.status] - priority[b.status] || a.dueDate.localeCompare(b.dueDate) || a.phrase.localeCompare(b.phrase));
   }
   function escapeHtml(value) { return String(value || '').replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char])); }
 
   function renderList() {
     const shown = filteredCards();
-    document.getElementById('shownCount').textContent = `显示 ${shown.length} / ${cards.length} 张`;
+    document.getElementById('shownCount').textContent = `${historyTab === 'favorites' ? '收藏' : '显示'} ${shown.length} / ${cards.length} 张`;
     const list = document.getElementById('cardList');
     if (!shown.length) {
       list.innerHTML = `<div class="empty">${cards.length ? '没有符合筛选条件的短语卡。' : '还没有短语卡。先输入第一条表达。'}</div>`;
       return;
     }
-    list.innerHTML = shown.map(card => `<article class="card"><div class="card-title"><strong>${escapeHtml(card.phrase)}</strong><span class="pill ${card.status.toLowerCase()}">${statusLabel(card.status)}</span></div><div class="prompt">${escapeHtml(card.prompt)} · ${tagLabel(card.tag)} · 下次 ${dateLabel(card.dueDate)}</div><p class="mini"><b>搭配：</b>${escapeHtml(card.pattern)}</p><p class="mini"><b>我的句子：</b>${escapeHtml(card.sentence)}</p><div class="card-actions"><button class="text-button" type="button" data-edit="${card.id}">编辑</button><button class="text-button delete" type="button" data-delete="${card.id}">删除</button></div></article>`).join('');
+    list.innerHTML = shown.map(card => `<article class="card"><div class="card-title"><strong>${escapeHtml(card.phrase)}</strong><div><button class="star-button${card.favorite ? ' active' : ''}" type="button" data-favorite="${card.id}" aria-label="${card.favorite ? '取消收藏' : '收藏'}" title="${card.favorite ? '取消收藏' : '收藏'}">${card.favorite ? '★' : '☆'}</button><span class="pill ${card.status.toLowerCase()}">${statusLabel(card.status)}</span></div></div><div class="prompt">${escapeHtml(card.prompt)} · ${tagLabel(card.tag)} · ${escapeHtml((card.deckIds || ['default']).map(deckName).join(' / '))} · 下次 ${dateLabel(card.dueDate)}</div><p class="mini"><b>搭配：</b>${escapeHtml(card.pattern)}</p><p class="mini"><b>我的句子：</b>${escapeHtml(card.sentence)}</p><div class="card-actions"><button class="text-button" type="button" data-edit="${card.id}">编辑</button><button class="text-button delete" type="button" data-delete="${card.id}">删除</button></div></article>`).join('');
+    list.querySelectorAll('[data-favorite]').forEach(button => button.addEventListener('click', () => toggleFavorite(button.dataset.favorite)));
     list.querySelectorAll('[data-edit]').forEach(button => button.addEventListener('click', () => editCard(button.dataset.edit)));
     list.querySelectorAll('[data-delete]').forEach(button => button.addEventListener('click', () => deleteCard(button.dataset.delete)));
   }
@@ -810,6 +976,27 @@
     document.getElementById('streakCount').textContent = calculateStreak();
   }
 
+  function createDeck() {
+    const name = window.prompt('请输入新词库名称：')?.trim();
+    if (!name) return;
+    if (decks.some(deck => deck.name.toLowerCase() === name.toLowerCase())) return setNotice('已有同名词库。', true);
+    decks.push({id:`deck-${Date.now()}-${Math.random().toString(16).slice(2)}`, name});
+    saveDecks(); renderDeckControls(); setNotice('词库已创建。');
+  }
+
+  function toggleFavorite(cardId) {
+    cards = cards.map(card => card.id === cardId ? {...card, favorite:!card.favorite, updatedAt:new Date().toISOString()} : card);
+    saveCards(); updateReviewFavorite();
+  }
+
+  function updateReviewFavorite() {
+    const card = cards.find(item => item.id === currentReviewId);
+    const active = Boolean(card?.favorite);
+    reviewFavorite.textContent = active ? '★' : '☆';
+    reviewFavorite.classList.toggle('active', active);
+    reviewFavorite.setAttribute('aria-label', active ? '取消收藏当前卡片' : '收藏当前卡片');
+  }
+
   function calculateStreak() {
     const days = new Set(reviewLog.map(item => item.date));
     let streak = 0;
@@ -822,7 +1009,7 @@
 
   function startReview() {
     switchView('review');
-    reviewQueue = dueCards();
+    reviewQueue = dueCards(selectedReviewDeck, selectedReviewScope);
     reviewGrades = new Map();
     currentReviewIndex = 0;
     reviewEmpty.hidden = Boolean(reviewQueue.length);
@@ -842,6 +1029,7 @@
     }
     const card = reviewQueue[currentReviewIndex];
     currentReviewId = card.id;
+    updateReviewFavorite();
     showCardFront(card);
     updateReviewMeta();
   }
@@ -865,7 +1053,7 @@
   }
 
   function updateReviewMeta() {
-    document.getElementById('reviewMeta').textContent = `剩余 ${reviewQueue.length - reviewGrades.size} 张 · 当前 ${currentReviewIndex + 1}/${reviewQueue.length} · R 卡优先，再按到期日期`;
+    document.getElementById('reviewMeta').textContent = `词库：${deckName(selectedReviewDeck)} · ${selectedReviewScope === 'favorites' ? '收藏夹' : '全部卡片'} · 剩余 ${reviewQueue.length - reviewGrades.size} 张 · 当前 ${currentReviewIndex + 1}/${reviewQueue.length}`;
   }
 
   function showReviewComplete() {
@@ -954,22 +1142,87 @@
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        const payload = JSON.parse(reader.result);
-        const incoming = Array.isArray(payload) ? payload : payload.cards;
-        if (!Array.isArray(incoming)) throw new Error('无卡片数据');
-        const valid = incoming.filter(isValidCard).map(card => normaliseCard({...card, id:card.id || id(), tag:['W','S','WS'].includes(card.tag) ? card.tag : 'WS', status:['G','Y','R'].includes(card.status) ? card.status : 'Y'}));
+        const suffix = (file.name.split('.').pop() || '').toLowerCase();
+        const incoming = suffix === 'json' ? parseJsonImport(reader.result) : parseDelimitedImport(reader.result);
+        if (!Array.isArray(incoming) || !incoming.length) throw new Error('无卡片数据');
+        const deckId = chooseImportDeck();
+        if (!deckId) return;
+        const existingIds = new Set(cards.map(card => card.id));
+        const valid = incoming.filter(card => card && typeof card.phrase === 'string' && card.phrase.trim()).map(card => normaliseCard({...card, id:!card.id || existingIds.has(card.id) ? id() : card.id, tag:['W','S','WS'].includes(card.tag) ? card.tag : 'WS', status:['G','Y','R'].includes(card.status) ? card.status : 'Y', deckIds:[...(card.deckIds || []), deckId]}));
         if (!valid.length) throw new Error('无有效卡片');
-        const existing = new Map(cards.map(card => [card.id, card]));
-        valid.forEach(card => existing.set(card.id, card));
-        cards = [...existing.values()].sort((a,b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
+        cards = [...valid, ...cards].sort((a,b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
         saveCards();
         setNotice(`已导入 ${valid.length} 张卡片。`);
-      } catch (_) { setNotice('导入失败：请选择由本工具导出的 JSON 文件。', true); }
+      } catch (_) { setNotice('导入失败：请选择有效的 JSON、CSV 或 TXT 文件。', true); }
       event.target.value = '';
     };
     reader.readAsText(file, 'utf-8');
   }
 
+  function parseJsonImport(text) {
+    const payload = JSON.parse(text);
+    return Array.isArray(payload) ? payload : payload.cards;
+  }
+
+  function parseDelimitedImport(text) {
+    const lines = String(text || '').split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+    if (!lines.length) return [];
+    const delimiter = lines[0].includes('\t') ? '\t' : ',';
+    const parseLine = line => line.split(delimiter).map(value => value.trim().replace(/^"|"$/g, ''));
+    const first = parseLine(lines[0]).map(value => value.toLowerCase());
+    const hasHeader = first.some(value => ['phrase','短语','definition','释义','pattern','搭配','sentence','例句'].includes(value));
+    const rows = (hasHeader ? lines.slice(1) : lines).map(parseLine);
+    const headers = hasHeader ? first : ['phrase','prompt','definition','pattern','sentence'];
+    const indexOf = names => headers.findIndex(header => names.includes(header));
+    return rows.map(columns => ({phrase:columns[indexOf(['phrase','短语']) >= 0 ? indexOf(['phrase','短语']) : 0] || columns[0] || '', prompt:columns[indexOf(['prompt','提示']) >= 0 ? indexOf(['prompt','提示']) : -1] || '导入内容', definition:columns[indexOf(['definition','释义']) >= 0 ? indexOf(['definition','释义']) : -1] || '', pattern:columns[indexOf(['pattern','搭配','框架']) >= 0 ? indexOf(['pattern','搭配','框架']) : -1] || '', sentence:columns[indexOf(['sentence','例句','原创句子']) >= 0 ? indexOf(['sentence','例句','原创句子']) : -1] || ''}));
+  }
+
+  function chooseImportDeck() {
+    const names = decks.map(deck => deck.name).join('、');
+    const name = window.prompt(`请输入导入目标词库名称（已有词库：${names}）。不存在时会自动新建：`)?.trim();
+    if (!name) return '';
+    const existing = decks.find(deck => deck.name.toLowerCase() === name.toLowerCase());
+    if (existing) return existing.id;
+    const newDeck = {id:`deck-${Date.now()}-${Math.random().toString(16).slice(2)}`, name};
+    decks.push(newDeck); saveDecks(); renderDeckControls();
+    return newDeck.id;
+  }
+
+  async function runImportAi() {
+    if (!appBridge.organizeImport) { importStatus.textContent = 'AI 整理导入仅在 macOS App 中可用。'; importStatus.className = 'ai-status error'; return; }
+    const source = importSource.value.trim();
+    if (!importDeckName.value.trim()) { importStatus.textContent = '请先填写新词库名称。'; importStatus.className = 'ai-status error'; return; }
+    if (!source) { importStatus.textContent = '请先粘贴需要整理的文字。'; importStatus.className = 'ai-status error'; return; }
+    const button = document.getElementById('runImportAi');
+    button.disabled = true; importStatus.textContent = '正在整理并补全字段…'; importStatus.className = 'ai-status';
+    try {
+      const result = await appBridge.organizeImport({profileId:selectedProfileId || aiSettings.activeProfileId, source});
+      importRows = result.rows || [];
+      renderImportPreview();
+      importConfirmActions.hidden = !importRows.length;
+      importStatus.textContent = `已生成 ${importRows.length} 行预览。请检查内容，并将待确认行改为“可导入”后确认。`;
+      importStatus.className = 'ai-status success';
+    } catch (error) { importStatus.textContent = error.message || 'AI 整理失败，请检查设置后重试。'; importStatus.className = 'ai-status error'; }
+    finally { button.disabled = false; }
+  }
+
+  function renderImportPreview() {
+    importPreviewWrap.innerHTML = `<table class="import-table"><thead><tr><th>短语</th><th>提示</th><th>英文释义</th><th>搭配 / 框架</th><th>原创句子</th><th>状态</th></tr></thead><tbody>${importRows.map((row, index) => `<tr><td><input data-import="phrase" data-index="${index}" value="${escapeHtml(row.phrase)}"></td><td><input data-import="prompt" data-index="${index}" value="${escapeHtml(row.prompt)}"></td><td><textarea data-import="definition" data-index="${index}">${escapeHtml(row.definition)}</textarea></td><td><textarea data-import="pattern" data-index="${index}">${escapeHtml(row.pattern)}</textarea></td><td><textarea data-import="sentence" data-index="${index}">${escapeHtml(row.sentence)}</textarea></td><td><select data-import="status" data-index="${index}"><option value="ready"${row.status === 'ready' ? ' selected' : ''}>可导入</option><option value="pending"${row.status === 'pending' ? ' selected' : ''}>待确认</option></select></td></tr>`).join('')}</tbody></table>`;
+    importPreviewWrap.hidden = false;
+  }
+
+  function confirmImport() {
+    const name = importDeckName.value.trim();
+    if (!name) return;
+    const rows = importRows.map((row, index) => { const next = {...row}; document.querySelectorAll(`[data-import][data-index="${index}"]`).forEach(input => { next[input.dataset.import] = input.value.trim(); }); return next; }).filter(row => row.status === 'ready' && row.phrase);
+    if (!rows.length) { importStatus.textContent = '没有可导入的行，请先编辑并标记为“可导入”。'; importStatus.className = 'ai-status error'; return; }
+    const deckId = `deck-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    decks.push({id:deckId, name}); saveDecks();
+    const incoming = rows.map(row => normaliseCard({id:id(), phrase:row.phrase, prompt:row.prompt || 'AI 整理', definition:row.definition || '待补充', pattern:row.pattern || '待补充', sentence:row.sentence || '待补充', tag:'WS', status:'Y', deckIds:[deckId], createdAt:new Date().toISOString(), updatedAt:new Date().toISOString()}));
+    cards = [...incoming, ...cards]; saveCards(); renderDeckControls(); importDialog.close(); setNotice(`已新建词库“${name}”，导入 ${incoming.length} 张卡片。`); switchView('history');
+  }
+
+  renderDeckControls();
   render();
 })();
 </script>
