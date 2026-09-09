@@ -1137,7 +1137,8 @@
   }
 
   function importCards(event) {
-    const file = event.target.files[0];
+    const input = event.target;
+    const file = input.files[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
@@ -1148,20 +1149,40 @@
         const deckId = chooseImportDeck();
         if (!deckId) return;
         const existingIds = new Set(cards.map(card => card.id));
-        const valid = incoming.filter(card => card && typeof card.phrase === 'string' && card.phrase.trim()).map(card => normaliseCard({...card, id:!card.id || existingIds.has(card.id) ? id() : card.id, tag:['W','S','WS'].includes(card.tag) ? card.tag : 'WS', status:['G','Y','R'].includes(card.status) ? card.status : 'Y', deckIds:[...(card.deckIds || []), deckId]}));
+        const valid = incoming.map(normaliseImportedCard).filter(card => card.phrase).map(card => normaliseCard({...card, id:!card.id || existingIds.has(card.id) ? id() : card.id, deckIds:[...(Array.isArray(card.deckIds) ? card.deckIds : []), deckId]}));
         if (!valid.length) throw new Error('无有效卡片');
         cards = [...valid, ...cards].sort((a,b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
         saveCards();
         setNotice(`已导入 ${valid.length} 张卡片。`);
-      } catch (_) { setNotice('导入失败：请选择有效的 JSON、CSV 或 TXT 文件。', true); }
-      event.target.value = '';
+      } catch (error) { setNotice(`导入失败：${error?.message || '请选择有效的 JSON、CSV 或 TXT 文件。'}`, true); }
+      input.value = '';
     };
+    reader.onerror = () => { input.value = ''; setNotice('导入失败：文件读取失败，请重试。', true); };
     reader.readAsText(file, 'utf-8');
   }
 
   function parseJsonImport(text) {
-    const payload = JSON.parse(text);
-    return Array.isArray(payload) ? payload : payload.cards;
+    const payload = JSON.parse(String(text || '').replace(/^\uFEFF/, '').trim());
+    if (Array.isArray(payload)) return payload;
+    if (!payload || typeof payload !== 'object') return [];
+    for (const key of ['cards','data','items','phrases','records','entries']) {
+      if (Array.isArray(payload[key])) return payload[key];
+    }
+    return payload.phrase || payload['短语'] ? [payload] : [];
+  }
+
+  function normaliseImportedCard(raw) {
+    const card = raw && typeof raw === 'object' ? raw : {};
+    const text = value => value == null ? '' : String(value).trim();
+    return {...card,
+      phrase:text(card.phrase || card['短语'] || card.expression || card.term),
+      prompt:text(card.prompt || card['提示'] || card.hint) || '导入内容',
+      definition:text(card.definition || card['释义'] || card.meaning),
+      pattern:text(card.pattern || card['搭配'] || card['固定搭配'] || card['语法框架'] || card.framework),
+      sentence:text(card.sentence || card['原创句子'] || card['例句']),
+      tag:['W','S','WS'].includes(card.tag) ? card.tag : 'WS',
+      status:['G','Y','R'].includes(card.status) ? card.status : 'Y'
+    };
   }
 
   function parseDelimitedImport(text) {
