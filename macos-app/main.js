@@ -127,6 +127,13 @@ async function fetchModels(settings) {
 
 const fieldLabels = { prompt: '个人化提示', definition: '英文释义', pattern: '固定搭配或语法框架', sentence: '我的原创句子' };
 
+const fieldRules = {
+  prompt: '只返回一个简洁的个人化提示，不要完整例句、解释、编号或 Markdown。',
+  definition: '只返回简洁准确的英文释义，不要例句、中文、词源说明或 Markdown。',
+  pattern: '只返回固定搭配或语法框架本身。使用 + noun、+ someone、[主语] 等槽位表达结构；严禁返回任何完整例句、句号结尾的句子、中文解释、编号或 Markdown。',
+  sentence: '必须返回恰好两行：第一行以“口语：”开头，第二行以“书面：”开头。两行都要自然、准确、符合 IELTS 7-8 分段表达，且都要正确使用目标短语；口语句自然清晰，书面句适合 Task 2 正式语境。不要添加第三行、解释、编号或 Markdown。'
+};
+
 function fieldSystemPrompt(field, mode) {
   const label = fieldLabels[field] || '文本';
   const style = {
@@ -137,7 +144,7 @@ function fieldSystemPrompt(field, mode) {
     expand: '在不编造事实的前提下，把内容展开得更完整',
     ielts: '改成自然、准确、适合 IELTS 的表达'
   }[mode] || '生成新的内容';
-  return `你是 IELTS 英语学习编辑。目标字段是“${label}”，请${style}。只返回纯文本，不要 Markdown、引号或解释。保持语言自然、准确、适合学习者。`;
+  return `你是 IELTS 英语学习编辑。目标字段是“${label}”，请${style}。${fieldRules[field] || '只返回纯文本，不要 Markdown、引号或解释。'} 保持英式拼写、语言自然、语法准确，不要为了复杂而堆砌生僻词。`;
 }
 
 app.whenReady().then(() => {
@@ -179,7 +186,7 @@ app.whenReady().then(() => {
     const settings = await readSettings();
     const profile = payload.profile?.endpoint ? cleanProfile(payload.profile) : settings.profiles.find(item => item.id === payload.profileId) || settings.profiles[0];
     const content = await callModel(profile, [
-      { role: 'system', content: 'You create IELTS English phrase-card content. Return JSON only with exactly three string keys: definition, pattern, sentence. definition is a concise English meaning. pattern is a useful collocation or grammar frame. sentence is one natural IELTS-level original example sentence. No markdown.' },
+      { role: 'system', content: 'You create IELTS English phrase-card content. Return JSON only with exactly three string keys: definition, pattern, sentence. definition is a concise English meaning. pattern is only a collocation or grammar frame, never an example sentence. sentence must contain exactly two lines: one labelled 口语 and one labelled 书面, both natural, accurate IELTS band 7-8 examples using the phrase. No markdown or extra keys.' },
       { role: 'user', content: `Phrase: ${String(payload.phrase || '').trim()}\nContext hint: ${String(payload.prompt || '').trim()}` }
     ]);
     try { return JSON.parse(content.replace(/^```json\s*|```$/g, '').trim()); }

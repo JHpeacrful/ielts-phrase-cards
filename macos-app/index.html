@@ -263,9 +263,9 @@
       <label>操作<select id="aiWorkbenchMode"><option value="generate">生成内容</option><option value="rewrite">改写当前内容</option><option value="regenerate">重新生成</option><option value="shorten">缩短表达</option><option value="expand">展开表达</option><option value="ielts">调整为 IELTS 表达</option></select></label>
     </div>
     <label class="preview-label" for="aiPreview">结果预览 <small id="aiPreviewHint">检查后再应用</small></label>
-    <textarea id="aiPreview" placeholder="AI 结果会先出现在这里"></textarea>
+    <textarea id="aiPreview" placeholder="点击“生成内容”后，AI 结果会出现在这里"></textarea>
     <p id="aiWorkbenchStatus" class="ai-status" role="status"></p>
-    <div class="dialog-actions"><button class="button undo-button" type="button" id="undoAiApply" hidden>撤销上次应用</button><button class="button" type="button" id="retryAi">再生成</button><button class="button primary" type="button" id="applyAi">应用结果</button></div>
+    <div class="dialog-actions"><button class="button undo-button" type="button" id="undoAiApply" hidden>撤销上次应用</button><button class="button" type="button" id="retryAi">生成内容</button><button class="button primary" type="button" id="applyAi">应用结果</button></div>
   </dialog>
 
   <section class="view section" data-view-panel="learn" aria-labelledby="formHeading">
@@ -538,7 +538,7 @@
   });
   workbenchProfile.addEventListener('change', () => { selectedProfileId = workbenchProfile.value; });
   document.getElementById('closeAiWorkbench').addEventListener('click', () => aiWorkbenchDialog.close());
-  document.getElementById('retryAi').addEventListener('click', () => runAiField(true));
+  document.getElementById('retryAi').addEventListener('click', () => runAiField(Boolean(aiLastRequest)));
   document.getElementById('applyAi').addEventListener('click', applyAiPreview);
   document.getElementById('undoAiApply').addEventListener('click', undoAiApply);
   document.getElementById('undoAiApplyForm').addEventListener('click', undoAiApply);
@@ -555,11 +555,12 @@
     const selected = aiTarget.value.slice(aiSelection.start, aiSelection.end);
     document.getElementById('aiWorkbenchMeta').textContent = `${button.parentElement.querySelector('label').textContent} · ${selected ? '将改写选中内容' : '将生成或改写整个字段'}`;
     aiPreview.value = '';
+    aiLastRequest = null;
+    document.getElementById('retryAi').textContent = '生成内容';
     workbenchMode.value = selected ? 'rewrite' : 'generate';
     workbenchProfile.value = selectedProfileId || aiSettings.activeProfileId || aiSettings.profiles[0]?.id || '';
-    setWorkbenchStatus('结果会先出现在预览区，检查后再应用。');
+    setWorkbenchStatus('已准备好。点击“生成内容”后才会请求 AI，结果会先出现在预览区。');
     aiWorkbenchDialog.showModal();
-    runAiField(false);
   }));
 
   async function runAiField(forceRetry) {
@@ -567,6 +568,8 @@
     const profileId = workbenchProfile.value || selectedProfileId;
     if (!profileId) return setWorkbenchStatus('请先在 AI 设置中添加 API 配置。', 'error');
     if (forceRetry) rememberSelection(aiTarget);
+    const retryButton = document.getElementById('retryAi');
+    retryButton.textContent = forceRetry ? '再生成' : '生成中…';
     const source = aiTarget.value.slice(aiSelection.start, aiSelection.end) || aiTarget.value;
     aiLastRequest = { field: aiTarget.id, profileId, source, mode: workbenchMode.value };
     setWorkbenchStatus('正在生成…');
@@ -575,6 +578,7 @@
     try {
       const result = await appBridge.generateField({ profileId, field: aiTarget.id, source, mode: workbenchMode.value, phrase: document.getElementById('phrase').value, context: document.getElementById('prompt').value });
       aiPreview.value = result.text || '';
+      retryButton.textContent = '再生成';
       setWorkbenchStatus(`已生成 · ${result.model || '当前模型'} · 请检查后应用。`, 'success');
     } catch (error) { setWorkbenchStatus(error.message || '生成失败，请检查设置后重试。', 'error'); }
     finally { document.getElementById('applyAi').disabled = false; document.getElementById('retryAi').disabled = false; }
