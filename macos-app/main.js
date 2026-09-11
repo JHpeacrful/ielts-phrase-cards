@@ -128,7 +128,7 @@ async function fetchModels(settings) {
 const fieldLabels = { prompt: '个人化提示', definition: '英文释义', pattern: '固定搭配或语法框架', sentence: '我的原创句子' };
 
 const fieldRules = {
-  prompt: '只返回一个简洁的个人化提示，不要完整例句、解释、编号或 Markdown。',
+  prompt: '生成一个有助于理解、记住或正确应用目标短语的个人化记忆提示。提示可以是中文或英文，请自行选择对记忆更有效的语言；优先使用具体的联想、使用场景、语义对比、词义拆解或常见语境，而不是泛泛的主题标签。只返回一条简洁提示，不要重复短语本身，不要完整例句、解释、编号或 Markdown。',
   definition: '只返回简洁准确的英文释义，不要例句、中文、词源说明或 Markdown。',
   pattern: '只返回固定搭配或语法框架本身。使用 + noun、+ someone、[主语] 等槽位表达结构；严禁返回任何完整例句、句号结尾的句子、中文解释、编号或 Markdown。',
   sentence: '必须返回恰好两行：第一行以“口语：”开头，第二行以“书面：”开头。两行都要自然、准确、符合 IELTS 7-8 分段表达，且都要正确使用目标短语；口语句自然清晰，书面句适合 Task 2 正式语境。不要添加第三行、解释、编号或 Markdown。'
@@ -145,6 +145,13 @@ function fieldSystemPrompt(field, mode) {
     ielts: '改成自然、准确、适合 IELTS 的表达'
   }[mode] || '生成新的内容';
   return `你是 IELTS 英语学习编辑。目标字段是“${label}”，请${style}。${fieldRules[field] || '只返回纯文本，不要 Markdown、引号或解释。'} 保持英式拼写、语言自然、语法准确，不要为了复杂而堆砌生僻词。`;
+}
+
+function fieldUserPrompt(field, phrase, context, source) {
+  const promptTask = field === 'prompt'
+    ? '请把输出写成能让学习者迅速联想到该短语含义或实际使用方式的记忆/应用提示；如果中文更好记就用中文，如果英文更好记就用英文。不要只写一个学科、领域或主题名称。'
+    : '';
+  return `${promptTask}\n短语：${phrase || '（未填写）'}\n个人化提示：${context || '（未填写）'}\n当前内容：${source || '（空白，请直接生成）'}`;
 }
 
 function validateFieldOutput(field, value) {
@@ -197,7 +204,7 @@ app.whenReady().then(() => {
     const context = String(payload.context || '').trim();
     const rawContent = await callModel(profile, [
       { role: 'system', content: fieldSystemPrompt(field, payload.mode) },
-      { role: 'user', content: `短语：${phrase || '（未填写）'}\n个人化提示：${context || '（未填写）'}\n当前内容：${source || '（空白，请直接生成）'}` }
+      { role: 'user', content: fieldUserPrompt(field, phrase, context, source) }
     ]);
     const content = validateFieldOutput(field, rawContent);
     return { text: content, profileId: profile.id, model: profile.model };
